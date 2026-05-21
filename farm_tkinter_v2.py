@@ -1557,7 +1557,7 @@ class FarmGUIv2:
             for t in TALENTS_LIST:
                 if t[1] != grp:
                     continue
-                _, name, max_lv, desc, _, _ = t
+                _, _, name, max_lv, desc, _ = t
                 level = d["talent_tree"].get(name, 0)
                 if level >= max_lv:
                     bar = "■" * max_lv + " MAX"
