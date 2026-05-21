@@ -521,6 +521,12 @@ class FarmGUIv2:
             # 养殖场生产
             process_barn_production(d)
 
+            # 天赋：自动收集动物产品
+            if get_talent_level(d["talent_tree"], "auto_collect") > 0:
+                total, collected = collect_all_barns(d)
+                if total > 0:
+                    self._log(f"🤖 自动收集 {total} 件动物产品")
+
             # 随机事件 + 日志
             old_events = d.get("total_events", 0)
             old_stdout = sys.stdout
