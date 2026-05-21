@@ -75,6 +75,177 @@ COLORS = {
 }
 
 
+# ============ 农作物图标绘制 ============
+# tkinter Canvas 绘制函数，接受 (canvas, cx, cy, s) 参数
+# cx,cy 为中心坐标，s 为缩放因子（基于 32x32 坐标系）
+
+def _draw_wheat(c, cx, cy, s=1.0):
+    c.create_line(cx, cy+12*s, cx, cy-8*s, fill="#5a8a3c", width=max(1, int(2*s)))
+    c.create_line(cx, cy+4*s, cx-8*s, cy+8*s, fill="#6aaa3c", width=max(1, int(1.5*s)))
+    c.create_line(cx, cy+2*s, cx+8*s, cy+6*s, fill="#6aaa3c", width=max(1, int(1.5*s)))
+    for i, ox in enumerate([-4, 0, 4]):
+        oy = -8 - i*5
+        c.create_oval(cx+ox*s-3*s, cy+oy*s-3*s, cx+ox*s+3*s, cy+oy*s+2*s, fill="#d4a017", outline="#b8860b", width=1)
+        c.create_line(cx+ox*s, cy+oy*s-3*s, cx+ox*s, cy+oy*s-8*s, fill="#d4a017", width=1)
+
+def _draw_corn(c, cx, cy, s=1.0):
+    c.create_line(cx, cy+12*s, cx, cy-10*s, fill="#4a7a2c", width=max(1, int(2*s)))
+    c.create_line(cx, cy-2*s, cx-10*s, cy-6*s, fill="#5a8a3c", width=max(1, int(2*s)))
+    c.create_line(cx, cy+2*s, cx+10*s, cy-2*s, fill="#5a8a3c", width=max(1, int(2*s)))
+    c.create_oval(cx+3*s, cy-8*s, cx+10*s, cy+4*s, fill="#f0c040", outline="#c89520", width=1)
+    for i in range(3):
+        c.create_line(cx+6*s+i*2*s, cy-8*s, cx+4*s+i*3*s, cy-14*s, fill="#8B4513", width=1)
+
+def _draw_rice(c, cx, cy, s=1.0):
+    c.create_line(cx, cy+12*s, cx, cy-4*s, fill="#5a8a3c", width=max(1, int(2*s)))
+    c.create_line(cx, cy+2*s, cx-8*s, cy+6*s, fill="#6aaa3c", width=max(1, int(1.5*s)))
+    for dx, dy in [(-4, -4), (0, -6), (4, -4)]:
+        ex, ey = cx+dx*s, cy+dy*s-2*s
+        c.create_line(cx, cy-4*s, ex, ey, fill="#c8a020", width=1)
+        c.create_oval(ex-3*s, ey-2*s, ex+3*s, ey+3*s, fill="#d4a017", outline="#b8860b", width=1)
+
+def _draw_rose(c, cx, cy, s=1.0):
+    c.create_line(cx, cy+12*s, cx, cy-2*s, fill="#2a6a1c", width=max(1, int(2*s)))
+    c.create_line(cx, cy+6*s, cx+4*s, cy+4*s, fill="#2a6a1c", width=1)
+    c.create_line(cx, cy+2*s, cx-4*s, cy, fill="#2a6a1c", width=1)
+    c.create_oval(cx-8*s, cy+4*s, cx-3*s, cy+9*s, fill="#3a8a2c", outline="#2a6a1c", width=1)
+    for i, r in enumerate([8, 6, 4]):
+        c.create_oval(cx-r*s, cy-r*s-4*s, cx+r*s, cy+r*s-4*s, fill=["#e03030","#d02020","#c01010"][i], outline="", width=0)
+
+def _draw_carrot(c, cx, cy, s=1.0):
+    c.create_polygon(cx, cy+12*s, cx-8*s, cy-2*s, cx+8*s, cy-2*s, fill="#e87020", outline="#c05a10", width=1)
+    c.create_line(cx, cy+12*s, cx, cy-2*s, fill="#d06010", width=1)
+    for dx in [-5, 0, 5]:
+        c.create_line(cx+dx*s, cy-2*s, cx+dx*s, cy-10*s, fill="#3a8a2c", width=max(1, int(2*s)))
+
+def _draw_pumpkin(c, cx, cy, s=1.0):
+    c.create_oval(cx-12*s, cy-10*s, cx+12*s, cy+10*s, fill="#e67300", outline="#c45a00", width=1)
+    for dx in [-6, 0, 6]:
+        c.create_arc(cx+dx*s-8*s, cy-10*s, cx+dx*s+8*s, cy+10*s, start=0, extent=180, fill="#d46500", outline="", width=0)
+    c.create_rectangle(cx-3*s, cy-12*s, cx+3*s, cy-9*s, fill="#5a8a3c", outline="#3a6a1c", width=1)
+    c.create_line(cx+3*s, cy-11*s, cx+10*s, cy-15*s, cx+12*s, cy-10*s, fill="#5a8a3c", width=max(1, int(1.5*s)), smooth=True)
+
+CROP_DRAW_FUNCS = {
+    "小麦": _draw_wheat, "玉米": _draw_corn, "水稻": _draw_rice,
+    "玫瑰": _draw_rose, "胡萝卜": _draw_carrot, "南瓜": _draw_pumpkin,
+}
+
+
+# ============ 动物图标绘制 ============
+
+def _draw_chicken(c, cx, cy, s=1.0):
+    c.create_oval(cx-8*s, cy-6*s, cx+8*s, cy+8*s, fill="#f0e060", outline="#d0b040", width=1)
+    c.create_oval(cx+4*s, cy-10*s, cx+12*s, cy-2*s, fill="#f0e060", outline="#d0b040", width=1)
+    c.create_polygon(cx+12*s, cy-6*s, cx+16*s, cy-5*s, cx+12*s, cy-4*s, fill="#e8a020", outline="", width=0)
+    c.create_arc(cx+6*s, cy-12*s, cx+11*s, cy-8*s, start=0, extent=180, fill="#e03030", outline="", width=0)
+    c.create_oval(cx+8*s, cy-7*s, cx+10*s, cy-5*s, fill="#333", outline="", width=0)
+    c.create_arc(cx-4*s, cy-2*s, cx+4*s, cy+4*s, start=0, extent=-180, fill="#e0c840", outline="", width=0)
+
+def _draw_duck(c, cx, cy, s=1.0):
+    c.create_oval(cx-10*s, cy-4*s, cx+8*s, cy+8*s, fill="#c8b878", outline="#a89858", width=1)
+    c.create_oval(cx+2*s, cy-8*s, cx+10*s, cy, fill="#6a8a3c", outline="#5a7a2c", width=1)
+    c.create_polygon(cx+10*s, cy-4*s, cx+16*s, cy-3*s, cx+16*s, cy-1*s, cx+10*s, cy-2*s, fill="#e8a020", outline="", width=0)
+    c.create_oval(cx+7*s, cy-5*s, cx+9*s, cy-3*s, fill="#333", outline="", width=0)
+    c.create_arc(cx-4*s, cy, cx+4*s, cy+5*s, start=0, extent=-180, fill="#b8a868", outline="", width=0)
+
+def _draw_rabbit(c, cx, cy, s=1.0):
+    c.create_oval(cx-8*s, cy-2*s, cx+8*s, cy+8*s, fill="#e0d8d0", outline="#c0b8b0", width=1)
+    c.create_oval(cx-6*s, cy-8*s, cx+6*s, cy+2*s, fill="#e0d8d0", outline="#c0b8b0", width=1)
+    for dx in [-3, 3]:
+        c.create_oval(cx+dx*s-3*s, cy-18*s, cx+dx*s+3*s, cy-8*s, fill="#e0d8d0", outline="#c0b8b0", width=1)
+        c.create_oval(cx+dx*s-1.5*s, cy-16*s, cx+dx*s+1.5*s, cy-9*s, fill="#f0c0c0", outline="", width=0)
+    c.create_oval(cx-3*s, cy-5*s, cx-1*s, cy-3*s, fill="#e03030", outline="", width=0)
+    c.create_oval(cx+1*s, cy-5*s, cx+3*s, cy-3*s, fill="#e03030", outline="", width=0)
+    c.create_oval(cx-1*s, cy-2*s, cx+1*s, cy, fill="#f0a0a0", outline="", width=0)
+
+def _draw_goose(c, cx, cy, s=1.0):
+    c.create_oval(cx-10*s, cy-2*s, cx+8*s, cy+8*s, fill="#f0f0f0", outline="#d0d0d0", width=1)
+    c.create_line(cx+2*s, cy-2*s, cx+6*s, cy-12*s, fill="#f0f0f0", width=max(2, int(4*s)))
+    c.create_line(cx+2*s, cy-2*s, cx+6*s, cy-12*s, fill="#d0d0d0", width=1)
+    c.create_oval(cx+4*s, cy-14*s, cx+10*s, cy-8*s, fill="#f0f0f0", outline="#d0d0d0", width=1)
+    c.create_polygon(cx+10*s, cy-12*s, cx+16*s, cy-11*s, cx+10*s, cy-10*s, fill="#e8a020", outline="", width=0)
+    c.create_oval(cx+7*s, cy-12*s, cx+9*s, cy-10*s, fill="#333", outline="", width=0)
+    c.create_arc(cx-4*s, cy+1*s, cx+4*s, cy+6*s, start=0, extent=-180, fill="#e8e8e8", outline="", width=0)
+
+def _draw_sheep(c, cx, cy, s=1.0):
+    body = [cx-10*s, cy-4*s, cx-8*s, cy-10*s, cx-4*s, cy-12*s, cx, cy-13*s,
+            cx+4*s, cy-12*s, cx+8*s, cy-10*s, cx+10*s, cy-4*s, cx+10*s, cy+2*s,
+            cx+8*s, cy+6*s, cx+4*s, cy+8*s, cx, cy+9*s, cx-4*s, cy+8*s,
+            cx-8*s, cy+6*s, cx-10*s, cy+2*s]
+    c.create_polygon(body, fill="#f0f0f0", outline="#d0d0d0", width=1)
+    c.create_oval(cx-6*s, cy-8*s, cx+2*s, cy, fill="#e8e0d0", outline="#d0c8b8", width=1)
+    c.create_oval(cx-3*s, cy-5*s, cx-1*s, cy-3*s, fill="#333", outline="", width=0)
+    c.create_oval(cx-1*s, cy-5*s, cx+1*s, cy-3*s, fill="#333", outline="", width=0)
+    c.create_oval(cx-8*s, cy-6*s, cx-5*s, cy-3*s, fill="#e0d8c8", outline="", width=0)
+    c.create_oval(cx+2*s, cy-6*s, cx+5*s, cy-3*s, fill="#e0d8c8", outline="", width=0)
+    for dx in [-6, -2, 2, 6]:
+        c.create_line(cx+dx*s, cy+8*s, cx+dx*s, cy+13*s, fill="#333", width=max(1, int(2*s)))
+
+def _draw_pig(c, cx, cy, s=1.0):
+    c.create_oval(cx-10*s, cy-4*s, cx+10*s, cy+8*s, fill="#f0b0b0", outline="#d09090", width=1)
+    c.create_oval(cx-8*s, cy-8*s, cx+2*s, cy+2*s, fill="#f0b0b0", outline="#d09090", width=1)
+    c.create_oval(cx-6*s, cy-3*s, cx-2*s, cy, fill="#e89090", outline="#d08080", width=1)
+    c.create_oval(cx-5*s, cy-2*s, cx-4*s, cy-1*s, fill="#c06060", outline="", width=0)
+    c.create_oval(cx-3*s, cy-2*s, cx-2*s, cy-1*s, fill="#c06060", outline="", width=0)
+    c.create_oval(cx-4*s, cy-5*s, cx-2*s, cy-3*s, fill="#333", outline="", width=0)
+    c.create_polygon(cx+1*s, cy-8*s, cx+4*s, cy-12*s, cx+5*s, cy-7*s, fill="#f0b0b0", outline="#d09090", width=1)
+    c.create_line(cx+10*s, cy+2*s, cx+14*s, cy-2*s, cx+12*s, cy-6*s, fill="#f0b0b0", width=max(1, int(2*s)), smooth=True)
+
+def _draw_cow(c, cx, cy, s=1.0):
+    c.create_oval(cx-10*s, cy-4*s, cx+10*s, cy+8*s, fill="#f0f0f0", outline="#d0d0d0", width=1)
+    c.create_oval(cx-6*s, cy-2*s, cx-2*s, cy+3*s, fill="#333", outline="", width=0)
+    c.create_oval(cx+2*s, cy+1*s, cx+6*s, cy+5*s, fill="#333", outline="", width=0)
+    c.create_oval(cx-8*s, cy-8*s, cx-2*s, cy, fill="#f0f0f0", outline="#d0d0d0", width=1)
+    c.create_line(cx-7*s, cy-8*s, cx-9*s, cy-14*s, fill="#8B7355", width=max(1, int(2*s)))
+    c.create_line(cx-3*s, cy-8*s, cx-1*s, cy-14*s, fill="#8B7355", width=max(1, int(2*s)))
+    c.create_oval(cx-6*s, cy-5*s, cx-4*s, cy-3*s, fill="#333", outline="", width=0)
+    c.create_oval(cx-5*s, cy-2*s, cx-3*s, cy, fill="#e0c0c0", outline="", width=0)
+    for dx in [-6, -2, 2, 6]:
+        c.create_line(cx+dx*s, cy+8*s, cx+dx*s, cy+13*s, fill="#333", width=max(1, int(2*s)))
+
+def _draw_alpaca(c, cx, cy, s=1.0):
+    c.create_oval(cx-8*s, cy-2*s, cx+8*s, cy+8*s, fill="#d0b080", outline="#b09060", width=1)
+    c.create_oval(cx-4*s, cy-10*s, cx+4*s, cy-2*s, fill="#d0b080", outline="#b09060", width=1)
+    c.create_oval(cx-4*s, cy-14*s, cx+4*s, cy-8*s, fill="#d0b080", outline="#b09060", width=1)
+    c.create_arc(cx-4*s, cy-16*s, cx+4*s, cy-12*s, start=0, extent=180, fill="#e0c890", outline="", width=0)
+    c.create_oval(cx-2*s, cy-12*s, cx, cy-10*s, fill="#333", outline="", width=0)
+    c.create_oval(cx+1*s, cy-12*s, cx+3*s, cy-10*s, fill="#333", outline="", width=0)
+    c.create_oval(cx, cy-9*s, cx+2*s, cy-8*s, fill="#c0a070", outline="", width=0)
+    c.create_oval(cx-5*s, cy-16*s, cx-3*s, cy-13*s, fill="#d0b080", outline="", width=0)
+    c.create_oval(cx+3*s, cy-16*s, cx+5*s, cy-13*s, fill="#d0b080", outline="", width=0)
+
+def _draw_horse(c, cx, cy, s=1.0):
+    c.create_oval(cx-10*s, cy-4*s, cx+10*s, cy+8*s, fill="#a08050", outline="#807040", width=1)
+    c.create_polygon(cx+4*s, cy-4*s, cx+8*s, cy-14*s, cx+12*s, cy-14*s, cx+10*s, cy-4*s,
+                     fill="#a08050", outline="#807040", width=1)
+    c.create_oval(cx+6*s, cy-16*s, cx+14*s, cy-8*s, fill="#a08050", outline="#807040", width=1)
+    c.create_oval(cx+10*s, cy-14*s, cx+12*s, cy-12*s, fill="#333", outline="", width=0)
+    c.create_line(cx+6*s, cy-14*s, cx+2*s, cy-10*s, cx+4*s, cy-4*s, fill="#604020", width=max(1, int(2*s)), smooth=True)
+    c.create_line(cx-10*s, cy+2*s, cx-16*s, cy-2*s, fill="#604020", width=max(1, int(2*s)))
+    for dx in [-6, -2, 2, 6]:
+        c.create_line(cx+dx*s, cy+8*s, cx+dx*s, cy+13*s, fill="#604020", width=max(1, int(2*s)))
+
+def _draw_deer(c, cx, cy, s=1.0):
+    c.create_oval(cx-10*s, cy-2*s, cx+8*s, cy+8*s, fill="#c8a060", outline="#b08840", width=1)
+    c.create_line(cx+2*s, cy-2*s, cx+4*s, cy-10*s, fill="#c8a060", width=max(2, int(4*s)))
+    c.create_oval(cx, cy-12*s, cx+7*s, cy-6*s, fill="#c8a060", outline="#b08840", width=1)
+    c.create_line(cx+3*s, cy-12*s, cx+1*s, cy-18*s, fill="#8B7355", width=max(1, int(2*s)))
+    c.create_line(cx+1*s, cy-16*s, cx-3*s, cy-18*s, fill="#8B7355", width=max(1, int(1.5*s)))
+    c.create_line(cx+3*s, cy-12*s, cx+6*s, cy-18*s, fill="#8B7355", width=max(1, int(2*s)))
+    c.create_line(cx+5*s, cy-16*s, cx+9*s, cy-18*s, fill="#8B7355", width=max(1, int(1.5*s)))
+    c.create_oval(cx+4*s, cy-10*s, cx+6*s, cy-8*s, fill="#333", outline="", width=0)
+    c.create_oval(cx+2*s, cy-7*s, cx+4*s, cy-6*s, fill="#333", outline="", width=0)
+    c.create_oval(cx-10*s, cy-2*s, cx-7*s, cy+1*s, fill="#f0f0f0", outline="", width=0)
+    for dx in [-6, -2, 2, 6]:
+        c.create_line(cx+dx*s, cy+8*s, cx+dx*s, cy+13*s, fill="#8B7355", width=max(1, int(2*s)))
+
+ANIMAL_DRAW_FUNCS = {
+    "鸡": _draw_chicken, "鸭": _draw_duck, "兔": _draw_rabbit, "鹅": _draw_goose,
+    "羊": _draw_sheep, "猪": _draw_pig, "牛": _draw_cow,
+    "羊驼": _draw_alpaca, "马": _draw_horse, "鹿": _draw_deer,
+}
+
+
 # ============ GUI ============
 class FarmGUIv2:
     def __init__(self):
@@ -92,8 +263,8 @@ class FarmGUIv2:
         self._calc_offline_v2()
 
         # 变量
-        self.land_buttons = []
-        self.barn_buttons = []
+        self.land_canvas = None
+        self.barn_canvas = None
         self.event_queue = []
         self._save_pending = False
         self.current_tab = "land"  # "land" or "barn"
@@ -285,33 +456,13 @@ class FarmGUIv2:
         self._build_land_grid()
 
     def _build_land_grid(self):
-        """创建 5x10 土地按钮网格"""
+        """创建单 Canvas 土地网格"""
         for w in self.land_frame.winfo_children():
             w.destroy()
-        self.land_buttons = []
-
-        cols = 10
-        rows = 5
-        for r in range(rows):
-            row_btns = []
-            for c in range(cols):
-                lid = r * cols + c + 1
-                btn = tk.Button(
-                    self.land_frame,
-                    text=f"#{lid}\n⬜",
-                    font=F["land"],
-                    width=10, height=4,
-                    bg=COLORS["land_empty"],
-                    activebackground=COLORS["land_hover"],
-                    relief="raised", bd=1,
-                    command=lambda x=lid: self._on_land_click(x),
-                )
-                btn.grid(row=r, column=c, padx=2, pady=2, sticky="nsew")
-                self.land_frame.grid_rowconfigure(r, weight=1)
-                self.land_frame.grid_columnconfigure(c, weight=1)
-                row_btns.append(btn)
-            self.land_buttons.append(row_btns)
-
+        self.land_canvas = tk.Canvas(self.land_frame, highlightthickness=0, bg=COLORS["bg"])
+        self.land_canvas.pack(fill="both", expand=True)
+        self.land_canvas.bind("<Button-1>", self._on_land_click)
+        self.land_canvas.bind("<Configure>", lambda e: self._update_land_grid())
         self._update_land_grid()
 
     # ==================== 养殖场界面 ====================
@@ -398,33 +549,13 @@ class FarmGUIv2:
         self.feed_info_label.pack(fill="x", padx=10, pady=2)
 
     def _build_barn_grid(self):
-        """创建 10x5 养殖栏位网格"""
+        """创建单 Canvas 养殖栏位网格"""
         for w in self.barn_grid_frame.winfo_children():
             w.destroy()
-        self.barn_buttons = []
-
-        cols = 10
-        rows = 5
-        for r in range(rows):
-            row_btns = []
-            for c in range(cols):
-                bid = r * cols + c + 1
-                btn = tk.Button(
-                    self.barn_grid_frame,
-                    text=f"#{bid}\n⬜",
-                    font=F["barn"],
-                    width=10, height=4,
-                    bg=COLORS["barn_empty"],
-                    activebackground=COLORS["land_hover"],
-                    relief="raised", bd=1,
-                    command=lambda x=bid: self._on_barn_click(x),
-                )
-                btn.grid(row=r, column=c, padx=2, pady=2, sticky="nsew")
-                self.barn_grid_frame.grid_rowconfigure(r, weight=1)
-                self.barn_grid_frame.grid_columnconfigure(c, weight=1)
-                row_btns.append(btn)
-            self.barn_buttons.append(row_btns)
-
+        self.barn_canvas = tk.Canvas(self.barn_grid_frame, highlightthickness=0, bg=COLORS["bg"])
+        self.barn_canvas.pack(fill="both", expand=True)
+        self.barn_canvas.bind("<Button-1>", self._on_barn_click)
+        self.barn_canvas.bind("<Configure>", lambda e: self._update_barn_grid())
         self._update_barn_grid()
 
     # ==================== 事件日志 ====================
@@ -549,102 +680,158 @@ class FarmGUIv2:
             self._log(f"⚠️ 刷新异常: {e}")
 
     def _update_land_grid(self):
-        """更新所有土地按钮显示"""
+        """在 Canvas 上绘制土地网格（含农作物图标）"""
+        if not hasattr(self, 'land_canvas') or not self.land_canvas:
+            return
+        self.land_canvas.delete("all")
         d = self.data
         now = now_dt()
         season, _ = get_season(d)
+        cw = self.land_canvas.winfo_width() - 2
+        ch = self.land_canvas.winfo_height() - 2
+        if cw < 50 or ch < 50:
+            return
+        cols, rows = 10, 5
+        cell_w, cell_h = cw / cols, ch / rows
 
-        for r in range(5):
-            for c in range(10):
-                lid = r * 10 + c + 1
-                btn = self.land_buttons[r][c]
+        for r in range(rows):
+            for c in range(cols):
+                lid = r * cols + c + 1
+                x0, y0 = c * cell_w, r * cell_h
+                x1, y1 = x0 + cell_w, y0 + cell_h
+                cx, cy_ = (x0 + x1) / 2, (y0 + y1) / 2
+
+                font_s = max(7, min(cell_w, cell_h) / 6)
+                ft = ("Microsoft YaHei", int(font_s))
+                ft2 = ("Microsoft YaHei", max(7, int(font_s) - 2))
+
                 if lid > d["unlocked_lands"]:
-                    btn.config(text=f"#{lid}\n🔒", state="disabled",
-                               bg="#ddd", fg="#999")
+                    self.land_canvas.create_rectangle(x0, y0, x1, y1, fill="#ddd", outline="#ccc", width=1)
+                    self.land_canvas.create_text(cx, cy_, text=f"#{lid}\n🔒", font=ft, fill="#999", justify="center")
                     continue
 
                 land = d["lands"][lid - 1]
+
                 if not land["crop"]:
-                    btn.config(text=f"#{lid}\n⬜", state="normal",
-                               bg=COLORS["land_empty"], fg="#666")
+                    self.land_canvas.create_rectangle(x0, y0, x1, y1, fill=COLORS["land_empty"], outline="#c0b090", width=1)
+                    self.land_canvas.create_text(cx, cy_, text=f"#{lid}\n⬜", font=ft, fill="#666", justify="center")
                 else:
                     pt = parse_dt(land["plant_time"])
                     growth = calc_growth_time(land["crop"], land["upgrade_level"], d["talent_tree"])
                     remain = growth - (now - pt).total_seconds() / 60.0
                     name = land["crop"]
-                    if len(name) > 4:
-                        name = name[:4]
+
                     if remain <= 0:
-                        btn.config(text=f"#{lid}\n✅{name}", state="normal",
-                                   bg=COLORS["land_ready"], fg="#333")
+                        bg_c, border = COLORS["land_ready"], "#90c090"
                     else:
-                        m = int(remain)
-                        s = int((remain - m) * 60)
-                        btn.config(text=f"#{lid}\n🌱{name}\n{m}:{s:02d}",
-                                   state="normal", bg=COLORS["land_growing"], fg="#333")
+                        bg_c, border = COLORS["land_growing"], "#d0c080"
+                    self.land_canvas.create_rectangle(x0, y0, x1, y1, fill=bg_c, outline=border, width=1)
+
+                    # 土地编号
+                    self.land_canvas.create_text(cx, y0 + 4, text=f"#{lid}", font=ft2, fill="#333", anchor="n")
+
+                    # 作物图标
+                    size = min(cell_w, cell_h) * 0.55
+                    s = size / 32
+                    draw_func = CROP_DRAW_FUNCS.get(name)
+                    if draw_func:
+                        draw_func(self.land_canvas, cx, cy_ - 1, s)
+
+                    # 状态文字
+                    if remain <= 0:
+                        self.land_canvas.create_text(cx, y1 - 4, text="✅", font=ft2, fill="#28a745", anchor="s")
+                    else:
+                        m, sec = int(remain), int((remain - int(remain)) * 60)
+                        self.land_canvas.create_text(cx, y1 - 3, text=f"{m}:{sec:02d}", font=ft2, fill="#333", anchor="s")
 
     def _update_barn_grid(self):
-        """更新养殖栏位按钮显示"""
+        """在 Canvas 上绘制养殖栏位网格（含动物图标）"""
+        if not hasattr(self, 'barn_canvas') or not self.barn_canvas:
+            return
+        self.barn_canvas.delete("all")
         d = self.data
         now = now_dt()
         unlocked_barns = d.get("unlocked_barns", INITIAL_BARNS)
+        cw = self.barn_canvas.winfo_width() - 2
+        ch = self.barn_canvas.winfo_height() - 2
+        if cw < 50 or ch < 50:
+            return
+        cols, rows = 10, 5
+        cell_w, cell_h = cw / cols, ch / rows
 
-        for r in range(5):
-            for c in range(10):
-                bid = r * 10 + c + 1
-                btn = self.barn_buttons[r][c]
+        for r in range(rows):
+            for c in range(cols):
+                bid = r * cols + c + 1
+                x0, y0 = c * cell_w, r * cell_h
+                x1, y1 = x0 + cell_w, y0 + cell_h
+                cx, cy_ = (x0 + x1) / 2, (y0 + y1) / 2
+
+                font_s = max(7, min(cell_w, cell_h) / 6)
+                ft = ("Microsoft YaHei", int(font_s))
+                ft2 = ("Microsoft YaHei", max(7, int(font_s) - 2))
+
                 if bid > unlocked_barns:
-                    btn.config(text=f"#{bid}\n🔒", state="disabled",
-                               bg="#ddd", fg="#999")
+                    self.barn_canvas.create_rectangle(x0, y0, x1, y1, fill="#ddd", outline="#ccc", width=1)
+                    self.barn_canvas.create_text(cx, cy_, text=f"#{bid}\n🔒", font=ft, fill="#999", justify="center")
                     continue
 
                 barn = d["barns"][bid - 1]
                 lv = barn.get("level", 1)
 
                 if barn["animal"] is None:
-                    btn.config(text=f"#{bid}\n⬜空闲\nLv.{lv}", state="normal",
-                               bg=COLORS["barn_empty"], fg="#666")
+                    self.barn_canvas.create_rectangle(x0, y0, x1, y1, fill=COLORS["barn_empty"], outline="#c0b090", width=1)
+                    self.barn_canvas.create_text(cx, cy_, text=f"#{bid}\n⬜空闲\nLv.{lv}", font=ft2, fill="#666", justify="center")
                 else:
                     a = get_barn_animal(barn["animal_type"])
                     stage = get_age_stage(barn)
                     pending = barn.get("pending_product", 0)
-                    emoji = {"juvenile": "🐣", "adult": "🐔", "elder": "👴"}.get(stage, "🐔")
-                    animal_name = barn["animal_type"]
-                    if len(animal_name) > 3:
-                        animal_name = animal_name[:3]
+                    stage_emoji = {"juvenile": "🐣", "adult": "🐔", "elder": "👴"}.get(stage, "🐔")
 
+                    # 背景色
                     if pending > 0:
-                        btn.config(text=f"#{bid}\n{emoji}{animal_name}\n✅{pending}个",
-                                   state="normal", bg=COLORS["barn_ready"], fg="#333")
+                        bg_c, border = COLORS["barn_ready"], "#90c090"
+                    elif can_barn_produce(barn, d):
+                        feed_ok = check_feed_available(d, barn["animal_type"])
+                        bg_c, border = (COLORS["barn_busy"], "#c0b060") if feed_ok else ("#f8d7da", "#e0a0a0")
+                    else:
+                        bg_c, border = COLORS["barn_busy"], "#c0b060"
+                    self.barn_canvas.create_rectangle(x0, y0, x1, y1, fill=bg_c, outline=border, width=1)
+
+                    # 编号 + 等级
+                    self.barn_canvas.create_text(cx, y0 + 4, text=f"#{bid} Lv.{lv}", font=ft2, fill="#333", anchor="n")
+
+                    # 动物图标
+                    size = min(cell_w, cell_h) * 0.55
+                    s = size / 32
+                    draw_func = ANIMAL_DRAW_FUNCS.get(barn["animal_type"])
+                    if draw_func:
+                        draw_func(self.barn_canvas, cx, cy_ - 1, s)
+
+                    # 状态文字
+                    if pending > 0:
+                        self.barn_canvas.create_text(cx, y1 - 4, text=f"✅{pending}个", font=ft2, fill="#28a745", anchor="s")
                     elif can_barn_produce(barn, d):
                         feed_ok = check_feed_available(d, barn["animal_type"])
                         if feed_ok:
-                            btn.config(text=f"#{bid}\n{emoji}{animal_name}\n🔄生产",
-                                       state="normal", bg=COLORS["barn_busy"], fg="#333")
+                            self.barn_canvas.create_text(cx, y1 - 4, text="🔄生产", font=ft2, fill="#333", anchor="s")
                         else:
-                            btn.config(text=f"#{bid}\n{emoji}{animal_name}\n❌缺料",
-                                       state="normal", bg="#f8d7da", fg="#333")
+                            self.barn_canvas.create_text(cx, y1 - 4, text="❌缺料", font=ft2, fill="#c0392b", anchor="s")
                     else:
-                        # 显示剩余产出时间（类似作物成熟倒计时）
                         fed = barn.get("fed_time")
                         if fed is None:
-                            time_str = "未投喂"
-                            bg_color = "#f8d7da"
+                            self.barn_canvas.create_text(cx, y1 - 4, text="未投喂", font=ft2, fill="#c0392b", anchor="s")
                         else:
-                            now = now_dt()
                             fed_dt = parse_dt(fed)
                             elapsed_since_feed = (now - fed_dt).total_seconds() / 60.0
                             last = barn.get("last_produce_time")
 
                             if last is None:
-                                # 首次产出：投喂后等待10分钟
                                 remain = 10.0 - elapsed_since_feed
                             else:
-                                # 计算速度调整后的生产周期
                                 speed_bonus = get_talent_value(d["talent_tree"], "animal_speed")
                                 barn_speed = 0.0
-                                for lv in range(2, barn.get("level", 1) + 1):
-                                    eff = barn_upgrade_effects(lv)
+                                for lv2 in range(2, barn.get("level", 1) + 1):
+                                    eff = barn_upgrade_effects(lv2)
                                     if "speed" in eff:
                                         barn_speed += eff["speed"]
                                 if barn.get("level", 1) >= 10:
@@ -655,16 +842,10 @@ class FarmGUIv2:
                                 remain = cycle - (now - last_dt).total_seconds() / 60.0
 
                             if remain <= 0:
-                                time_str = "即将产出"
-                                bg_color = COLORS["barn_busy"]
+                                self.barn_canvas.create_text(cx, y1 - 4, text=f"{stage_emoji}即将产出", font=ft2, fill="#333", anchor="s")
                             else:
-                                m = int(remain)
-                                s = int((remain - m) * 60)
-                                time_str = f"{m}:{s:02d}"
-                                bg_color = COLORS["barn_busy"]
-
-                        btn.config(text=f"#{bid}\n{emoji}{animal_name}\n{time_str}",
-                                   state="normal", bg=bg_color, fg="#333")
+                                m, sec = int(remain), int((remain - int(remain)) * 60)
+                                self.barn_canvas.create_text(cx, y1 - 4, text=f"{m}:{sec:02d}", font=ft2, fill="#333", anchor="s")
 
     def _update_barn_status(self):
         """更新养殖场状态信息"""
@@ -701,8 +882,13 @@ class FarmGUIv2:
 
     # ==================== 土地操作 ====================
 
-    def _on_land_click(self, lid):
-        """点击土地"""
+    def _on_land_click(self, event):
+        """点击 Canvas 土地网格"""
+        cw = self.land_canvas.winfo_width()
+        ch = self.land_canvas.winfo_height()
+        col = int(event.x / cw * 10)
+        row = int(event.y / ch * 5)
+        lid = row * 10 + col + 1
         if lid > len(self.data["lands"]) or lid > self.data["unlocked_lands"]:
             return
         land = self.data["lands"][lid - 1]
@@ -1666,8 +1852,13 @@ class FarmGUIv2:
 
     # ==================== 养殖场操作 ====================
 
-    def _on_barn_click(self, bid):
-        """点击养殖栏位"""
+    def _on_barn_click(self, event):
+        """点击 Canvas 养殖栏位"""
+        cw = self.barn_canvas.winfo_width()
+        ch = self.barn_canvas.winfo_height()
+        col = int(event.x / cw * 10)
+        row = int(event.y / ch * 5)
+        bid = row * 10 + col + 1
         d = self.data
         ub = d.get("unlocked_barns", INITIAL_BARNS)
         if bid > ub:
