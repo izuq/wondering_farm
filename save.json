@@ -1,0 +1,943 @@
+{
+  "gold": 62742,
+  "level": 10,
+  "exp": 964,
+  "talent_points": 9,
+  "last_save_time": "2026-05-21 08:47:29",
+  "lands": [
+    {
+      "id": 1,
+      "crop": null,
+      "plant_time": null,
+      "upgrade_level": 1
+    },
+    {
+      "id": 2,
+      "crop": null,
+      "plant_time": null,
+      "upgrade_level": 1
+    },
+    {
+      "id": 3,
+      "crop": null,
+      "plant_time": null,
+      "upgrade_level": 1
+    },
+    {
+      "id": 4,
+      "crop": null,
+      "plant_time": null,
+      "upgrade_level": 1
+    },
+    {
+      "id": 5,
+      "crop": "玫瑰",
+      "plant_time": "2026-05-21 08:01:02",
+      "upgrade_level": 1
+    },
+    {
+      "id": 6,
+      "crop": null,
+      "plant_time": null,
+      "upgrade_level": 1
+    },
+    {
+      "id": 7,
+      "crop": null,
+      "plant_time": null,
+      "upgrade_level": 1
+    },
+    {
+      "id": 8,
+      "crop": null,
+      "plant_time": null,
+      "upgrade_level": 1
+    },
+    {
+      "id": 9,
+      "crop": "玫瑰",
+      "plant_time": "2026-05-21 08:01:02",
+      "upgrade_level": 1
+    },
+    {
+      "id": 10,
+      "crop": null,
+      "plant_time": null,
+      "upgrade_level": 1
+    },
+    {
+      "id": 11,
+      "crop": null,
+      "plant_time": null,
+      "upgrade_level": 1
+    },
+    {
+      "id": 12,
+      "crop": null,
+      "plant_time": null,
+      "upgrade_level": 1
+    },
+    {
+      "id": 13,
+      "crop": null,
+      "plant_time": null,
+      "upgrade_level": 1
+    },
+    {
+      "id": 14,
+      "crop": null,
+      "plant_time": null,
+      "upgrade_level": 1
+    },
+    {
+      "id": 15,
+      "crop": null,
+      "plant_time": null,
+      "upgrade_level": 1
+    },
+    {
+      "id": 16,
+      "crop": null,
+      "plant_time": null,
+      "upgrade_level": 1
+    },
+    {
+      "id": 17,
+      "crop": null,
+      "plant_time": null,
+      "upgrade_level": 1
+    },
+    {
+      "id": 18,
+      "crop": null,
+      "plant_time": null,
+      "upgrade_level": 1
+    },
+    {
+      "id": 19,
+      "crop": null,
+      "plant_time": null,
+      "upgrade_level": 1
+    },
+    {
+      "id": 20,
+      "crop": null,
+      "plant_time": null,
+      "upgrade_level": 1
+    },
+    {
+      "id": 21,
+      "crop": null,
+      "plant_time": null,
+      "upgrade_level": 1
+    },
+    {
+      "id": 22,
+      "crop": null,
+      "plant_time": null,
+      "upgrade_level": 1
+    },
+    {
+      "id": 23,
+      "crop": null,
+      "plant_time": null,
+      "upgrade_level": 1
+    },
+    {
+      "id": 24,
+      "crop": null,
+      "plant_time": null,
+      "upgrade_level": 1
+    },
+    {
+      "id": 25,
+      "crop": null,
+      "plant_time": null,
+      "upgrade_level": 1
+    }
+  ],
+  "barns": [
+    {
+      "id": 1,
+      "unlocked": true,
+      "level": 1,
+      "animal": "鸡",
+      "animal_type": "鸡",
+      "purchase_time": "2026-05-20 14:46:36",
+      "age_stage": "adult",
+      "production_count": 35,
+      "last_produce_time": "2026-05-21 08:30:16",
+      "pending_product": 0,
+      "breed_cooldown": null,
+      "fed_time": "2026-05-20 15:10:39"
+    },
+    {
+      "id": 2,
+      "unlocked": true,
+      "level": 1,
+      "animal": "鸡",
+      "animal_type": "鸡",
+      "purchase_time": "2026-05-20 15:10:47",
+      "age_stage": "adult",
+      "production_count": 35,
+      "last_produce_time": "2026-05-21 08:30:16",
+      "pending_product": 0,
+      "breed_cooldown": null,
+      "fed_time": "2026-05-20 15:11:09"
+    },
+    {
+      "id": 3,
+      "unlocked": true,
+      "level": 1,
+      "animal": "鸡",
+      "animal_type": "鸡",
+      "purchase_time": "2026-05-20 15:10:50",
+      "age_stage": "adult",
+      "production_count": 35,
+      "last_produce_time": "2026-05-21 08:30:16",
+      "pending_product": 0,
+      "breed_cooldown": null,
+      "fed_time": "2026-05-20 15:11:09"
+    },
+    {
+      "id": 4,
+      "unlocked": true,
+      "level": 1,
+      "animal": "鸡",
+      "animal_type": "鸡",
+      "purchase_time": "2026-05-20 15:10:55",
+      "age_stage": "adult",
+      "production_count": 35,
+      "last_produce_time": "2026-05-21 08:30:16",
+      "pending_product": 0,
+      "breed_cooldown": null,
+      "fed_time": "2026-05-20 15:11:09"
+    },
+    {
+      "id": 5,
+      "unlocked": true,
+      "level": 1,
+      "animal": "鸡",
+      "animal_type": "鸡",
+      "purchase_time": "2026-05-20 15:10:58",
+      "age_stage": "adult",
+      "production_count": 35,
+      "last_produce_time": "2026-05-21 08:30:16",
+      "pending_product": 0,
+      "breed_cooldown": null,
+      "fed_time": "2026-05-20 15:11:09"
+    },
+    {
+      "id": 6,
+      "unlocked": true,
+      "level": 1,
+      "animal": "鸡",
+      "animal_type": "鸡",
+      "purchase_time": "2026-05-20 15:11:01",
+      "age_stage": "adult",
+      "production_count": 34,
+      "last_produce_time": "2026-05-21 08:42:12",
+      "pending_product": 0,
+      "breed_cooldown": null,
+      "fed_time": "2026-05-20 15:55:45"
+    },
+    {
+      "id": 7,
+      "unlocked": false,
+      "level": 1,
+      "animal": null,
+      "animal_type": null,
+      "purchase_time": null,
+      "age_stage": null,
+      "production_count": 0,
+      "last_produce_time": null,
+      "pending_product": 0,
+      "breed_cooldown": null,
+      "fed_time": null
+    },
+    {
+      "id": 8,
+      "unlocked": false,
+      "level": 1,
+      "animal": null,
+      "animal_type": null,
+      "purchase_time": null,
+      "age_stage": null,
+      "production_count": 0,
+      "last_produce_time": null,
+      "pending_product": 0,
+      "breed_cooldown": null,
+      "fed_time": null
+    },
+    {
+      "id": 9,
+      "unlocked": false,
+      "level": 1,
+      "animal": null,
+      "animal_type": null,
+      "purchase_time": null,
+      "age_stage": null,
+      "production_count": 0,
+      "last_produce_time": null,
+      "pending_product": 0,
+      "breed_cooldown": null,
+      "fed_time": null
+    },
+    {
+      "id": 10,
+      "unlocked": false,
+      "level": 1,
+      "animal": null,
+      "animal_type": null,
+      "purchase_time": null,
+      "age_stage": null,
+      "production_count": 0,
+      "last_produce_time": null,
+      "pending_product": 0,
+      "breed_cooldown": null,
+      "fed_time": null
+    },
+    {
+      "id": 11,
+      "unlocked": false,
+      "level": 1,
+      "animal": null,
+      "animal_type": null,
+      "purchase_time": null,
+      "age_stage": null,
+      "production_count": 0,
+      "last_produce_time": null,
+      "pending_product": 0,
+      "breed_cooldown": null,
+      "fed_time": null
+    },
+    {
+      "id": 12,
+      "unlocked": false,
+      "level": 1,
+      "animal": null,
+      "animal_type": null,
+      "purchase_time": null,
+      "age_stage": null,
+      "production_count": 0,
+      "last_produce_time": null,
+      "pending_product": 0,
+      "breed_cooldown": null,
+      "fed_time": null
+    },
+    {
+      "id": 13,
+      "unlocked": false,
+      "level": 1,
+      "animal": null,
+      "animal_type": null,
+      "purchase_time": null,
+      "age_stage": null,
+      "production_count": 0,
+      "last_produce_time": null,
+      "pending_product": 0,
+      "breed_cooldown": null,
+      "fed_time": null
+    },
+    {
+      "id": 14,
+      "unlocked": false,
+      "level": 1,
+      "animal": null,
+      "animal_type": null,
+      "purchase_time": null,
+      "age_stage": null,
+      "production_count": 0,
+      "last_produce_time": null,
+      "pending_product": 0,
+      "breed_cooldown": null,
+      "fed_time": null
+    },
+    {
+      "id": 15,
+      "unlocked": false,
+      "level": 1,
+      "animal": null,
+      "animal_type": null,
+      "purchase_time": null,
+      "age_stage": null,
+      "production_count": 0,
+      "last_produce_time": null,
+      "pending_product": 0,
+      "breed_cooldown": null,
+      "fed_time": null
+    },
+    {
+      "id": 16,
+      "unlocked": false,
+      "level": 1,
+      "animal": null,
+      "animal_type": null,
+      "purchase_time": null,
+      "age_stage": null,
+      "production_count": 0,
+      "last_produce_time": null,
+      "pending_product": 0,
+      "breed_cooldown": null,
+      "fed_time": null
+    },
+    {
+      "id": 17,
+      "unlocked": false,
+      "level": 1,
+      "animal": null,
+      "animal_type": null,
+      "purchase_time": null,
+      "age_stage": null,
+      "production_count": 0,
+      "last_produce_time": null,
+      "pending_product": 0,
+      "breed_cooldown": null,
+      "fed_time": null
+    },
+    {
+      "id": 18,
+      "unlocked": false,
+      "level": 1,
+      "animal": null,
+      "animal_type": null,
+      "purchase_time": null,
+      "age_stage": null,
+      "production_count": 0,
+      "last_produce_time": null,
+      "pending_product": 0,
+      "breed_cooldown": null,
+      "fed_time": null
+    },
+    {
+      "id": 19,
+      "unlocked": false,
+      "level": 1,
+      "animal": null,
+      "animal_type": null,
+      "purchase_time": null,
+      "age_stage": null,
+      "production_count": 0,
+      "last_produce_time": null,
+      "pending_product": 0,
+      "breed_cooldown": null,
+      "fed_time": null
+    },
+    {
+      "id": 20,
+      "unlocked": false,
+      "level": 1,
+      "animal": null,
+      "animal_type": null,
+      "purchase_time": null,
+      "age_stage": null,
+      "production_count": 0,
+      "last_produce_time": null,
+      "pending_product": 0,
+      "breed_cooldown": null,
+      "fed_time": null
+    },
+    {
+      "id": 21,
+      "unlocked": false,
+      "level": 1,
+      "animal": null,
+      "animal_type": null,
+      "purchase_time": null,
+      "age_stage": null,
+      "production_count": 0,
+      "last_produce_time": null,
+      "pending_product": 0,
+      "breed_cooldown": null,
+      "fed_time": null
+    },
+    {
+      "id": 22,
+      "unlocked": false,
+      "level": 1,
+      "animal": null,
+      "animal_type": null,
+      "purchase_time": null,
+      "age_stage": null,
+      "production_count": 0,
+      "last_produce_time": null,
+      "pending_product": 0,
+      "breed_cooldown": null,
+      "fed_time": null
+    },
+    {
+      "id": 23,
+      "unlocked": false,
+      "level": 1,
+      "animal": null,
+      "animal_type": null,
+      "purchase_time": null,
+      "age_stage": null,
+      "production_count": 0,
+      "last_produce_time": null,
+      "pending_product": 0,
+      "breed_cooldown": null,
+      "fed_time": null
+    },
+    {
+      "id": 24,
+      "unlocked": false,
+      "level": 1,
+      "animal": null,
+      "animal_type": null,
+      "purchase_time": null,
+      "age_stage": null,
+      "production_count": 0,
+      "last_produce_time": null,
+      "pending_product": 0,
+      "breed_cooldown": null,
+      "fed_time": null
+    },
+    {
+      "id": 25,
+      "unlocked": false,
+      "level": 1,
+      "animal": null,
+      "animal_type": null,
+      "purchase_time": null,
+      "age_stage": null,
+      "production_count": 0,
+      "last_produce_time": null,
+      "pending_product": 0,
+      "breed_cooldown": null,
+      "fed_time": null
+    },
+    {
+      "id": 26,
+      "unlocked": false,
+      "level": 1,
+      "animal": null,
+      "animal_type": null,
+      "purchase_time": null,
+      "age_stage": null,
+      "production_count": 0,
+      "last_produce_time": null,
+      "pending_product": 0,
+      "breed_cooldown": null,
+      "fed_time": null
+    },
+    {
+      "id": 27,
+      "unlocked": false,
+      "level": 1,
+      "animal": null,
+      "animal_type": null,
+      "purchase_time": null,
+      "age_stage": null,
+      "production_count": 0,
+      "last_produce_time": null,
+      "pending_product": 0,
+      "breed_cooldown": null,
+      "fed_time": null
+    },
+    {
+      "id": 28,
+      "unlocked": false,
+      "level": 1,
+      "animal": null,
+      "animal_type": null,
+      "purchase_time": null,
+      "age_stage": null,
+      "production_count": 0,
+      "last_produce_time": null,
+      "pending_product": 0,
+      "breed_cooldown": null,
+      "fed_time": null
+    },
+    {
+      "id": 29,
+      "unlocked": false,
+      "level": 1,
+      "animal": null,
+      "animal_type": null,
+      "purchase_time": null,
+      "age_stage": null,
+      "production_count": 0,
+      "last_produce_time": null,
+      "pending_product": 0,
+      "breed_cooldown": null,
+      "fed_time": null
+    },
+    {
+      "id": 30,
+      "unlocked": false,
+      "level": 1,
+      "animal": null,
+      "animal_type": null,
+      "purchase_time": null,
+      "age_stage": null,
+      "production_count": 0,
+      "last_produce_time": null,
+      "pending_product": 0,
+      "breed_cooldown": null,
+      "fed_time": null
+    },
+    {
+      "id": 31,
+      "unlocked": false,
+      "level": 1,
+      "animal": null,
+      "animal_type": null,
+      "purchase_time": null,
+      "age_stage": null,
+      "production_count": 0,
+      "last_produce_time": null,
+      "pending_product": 0,
+      "breed_cooldown": null,
+      "fed_time": null
+    },
+    {
+      "id": 32,
+      "unlocked": false,
+      "level": 1,
+      "animal": null,
+      "animal_type": null,
+      "purchase_time": null,
+      "age_stage": null,
+      "production_count": 0,
+      "last_produce_time": null,
+      "pending_product": 0,
+      "breed_cooldown": null,
+      "fed_time": null
+    },
+    {
+      "id": 33,
+      "unlocked": false,
+      "level": 1,
+      "animal": null,
+      "animal_type": null,
+      "purchase_time": null,
+      "age_stage": null,
+      "production_count": 0,
+      "last_produce_time": null,
+      "pending_product": 0,
+      "breed_cooldown": null,
+      "fed_time": null
+    },
+    {
+      "id": 34,
+      "unlocked": false,
+      "level": 1,
+      "animal": null,
+      "animal_type": null,
+      "purchase_time": null,
+      "age_stage": null,
+      "production_count": 0,
+      "last_produce_time": null,
+      "pending_product": 0,
+      "breed_cooldown": null,
+      "fed_time": null
+    },
+    {
+      "id": 35,
+      "unlocked": false,
+      "level": 1,
+      "animal": null,
+      "animal_type": null,
+      "purchase_time": null,
+      "age_stage": null,
+      "production_count": 0,
+      "last_produce_time": null,
+      "pending_product": 0,
+      "breed_cooldown": null,
+      "fed_time": null
+    },
+    {
+      "id": 36,
+      "unlocked": false,
+      "level": 1,
+      "animal": null,
+      "animal_type": null,
+      "purchase_time": null,
+      "age_stage": null,
+      "production_count": 0,
+      "last_produce_time": null,
+      "pending_product": 0,
+      "breed_cooldown": null,
+      "fed_time": null
+    },
+    {
+      "id": 37,
+      "unlocked": false,
+      "level": 1,
+      "animal": null,
+      "animal_type": null,
+      "purchase_time": null,
+      "age_stage": null,
+      "production_count": 0,
+      "last_produce_time": null,
+      "pending_product": 0,
+      "breed_cooldown": null,
+      "fed_time": null
+    },
+    {
+      "id": 38,
+      "unlocked": false,
+      "level": 1,
+      "animal": null,
+      "animal_type": null,
+      "purchase_time": null,
+      "age_stage": null,
+      "production_count": 0,
+      "last_produce_time": null,
+      "pending_product": 0,
+      "breed_cooldown": null,
+      "fed_time": null
+    },
+    {
+      "id": 39,
+      "unlocked": false,
+      "level": 1,
+      "animal": null,
+      "animal_type": null,
+      "purchase_time": null,
+      "age_stage": null,
+      "production_count": 0,
+      "last_produce_time": null,
+      "pending_product": 0,
+      "breed_cooldown": null,
+      "fed_time": null
+    },
+    {
+      "id": 40,
+      "unlocked": false,
+      "level": 1,
+      "animal": null,
+      "animal_type": null,
+      "purchase_time": null,
+      "age_stage": null,
+      "production_count": 0,
+      "last_produce_time": null,
+      "pending_product": 0,
+      "breed_cooldown": null,
+      "fed_time": null
+    },
+    {
+      "id": 41,
+      "unlocked": false,
+      "level": 1,
+      "animal": null,
+      "animal_type": null,
+      "purchase_time": null,
+      "age_stage": null,
+      "production_count": 0,
+      "last_produce_time": null,
+      "pending_product": 0,
+      "breed_cooldown": null,
+      "fed_time": null
+    },
+    {
+      "id": 42,
+      "unlocked": false,
+      "level": 1,
+      "animal": null,
+      "animal_type": null,
+      "purchase_time": null,
+      "age_stage": null,
+      "production_count": 0,
+      "last_produce_time": null,
+      "pending_product": 0,
+      "breed_cooldown": null,
+      "fed_time": null
+    },
+    {
+      "id": 43,
+      "unlocked": false,
+      "level": 1,
+      "animal": null,
+      "animal_type": null,
+      "purchase_time": null,
+      "age_stage": null,
+      "production_count": 0,
+      "last_produce_time": null,
+      "pending_product": 0,
+      "breed_cooldown": null,
+      "fed_time": null
+    },
+    {
+      "id": 44,
+      "unlocked": false,
+      "level": 1,
+      "animal": null,
+      "animal_type": null,
+      "purchase_time": null,
+      "age_stage": null,
+      "production_count": 0,
+      "last_produce_time": null,
+      "pending_product": 0,
+      "breed_cooldown": null,
+      "fed_time": null
+    },
+    {
+      "id": 45,
+      "unlocked": false,
+      "level": 1,
+      "animal": null,
+      "animal_type": null,
+      "purchase_time": null,
+      "age_stage": null,
+      "production_count": 0,
+      "last_produce_time": null,
+      "pending_product": 0,
+      "breed_cooldown": null,
+      "fed_time": null
+    },
+    {
+      "id": 46,
+      "unlocked": false,
+      "level": 1,
+      "animal": null,
+      "animal_type": null,
+      "purchase_time": null,
+      "age_stage": null,
+      "production_count": 0,
+      "last_produce_time": null,
+      "pending_product": 0,
+      "breed_cooldown": null,
+      "fed_time": null
+    },
+    {
+      "id": 47,
+      "unlocked": false,
+      "level": 1,
+      "animal": null,
+      "animal_type": null,
+      "purchase_time": null,
+      "age_stage": null,
+      "production_count": 0,
+      "last_produce_time": null,
+      "pending_product": 0,
+      "breed_cooldown": null,
+      "fed_time": null
+    },
+    {
+      "id": 48,
+      "unlocked": false,
+      "level": 1,
+      "animal": null,
+      "animal_type": null,
+      "purchase_time": null,
+      "age_stage": null,
+      "production_count": 0,
+      "last_produce_time": null,
+      "pending_product": 0,
+      "breed_cooldown": null,
+      "fed_time": null
+    },
+    {
+      "id": 49,
+      "unlocked": false,
+      "level": 1,
+      "animal": null,
+      "animal_type": null,
+      "purchase_time": null,
+      "age_stage": null,
+      "production_count": 0,
+      "last_produce_time": null,
+      "pending_product": 0,
+      "breed_cooldown": null,
+      "fed_time": null
+    },
+    {
+      "id": 50,
+      "unlocked": false,
+      "level": 1,
+      "animal": null,
+      "animal_type": null,
+      "purchase_time": null,
+      "age_stage": null,
+      "production_count": 0,
+      "last_produce_time": null,
+      "pending_product": 0,
+      "breed_cooldown": null,
+      "fed_time": null
+    }
+  ],
+  "unlocked_barns": 6,
+  "feed_inventory": {
+    "基础饲料": 9,
+    "精制饲料": 0,
+    "高级饲料": 0,
+    "特殊饲料": 0
+  },
+  "feed_factory": {
+    "level": 1,
+    "current_order": null,
+    "start_time": null,
+    "ready": false
+  },
+  "barn_total_collects": 209,
+  "unlocked_lands": 9,
+  "diamond": 0,
+  "total_harvests": 50,
+  "total_earnings": 13920,
+  "total_processed": 0,
+  "talent_tree": {},
+  "achievements": [
+    "养殖新手",
+    "第一桶金",
+    "初次收获"
+  ],
+  "event_active": {
+    "rain_bless": "2026-05-21 08:42:42",
+    "harvest_festival": "2026-05-21 08:45:58",
+    "merchant_visit": "2026-05-21 08:46:49"
+  },
+  "inventory": {
+    "crops": {
+      "小麦": 8,
+      "玉米": 5,
+      "玫瑰": 6
+    },
+    "seeds": {
+      "小麦": 6,
+      "玉米": 4,
+      "水稻": 0,
+      "玫瑰": 2
+    },
+    "products": {
+      "鸡蛋": 209
+    }
+  },
+  "factories": {
+    "磨坊": {
+      "current_order": null,
+      "start_time": null,
+      "ready": false
+    },
+    "榨油机": {
+      "current_order": null,
+      "start_time": null,
+      "ready": false
+    },
+    "酿酒坊": {
+      "current_order": null,
+      "start_time": null,
+      "ready": false
+    },
+    "花茶坊": {
+      "current_order": null,
+      "start_time": null,
+      "ready": false
+    },
+    "榨汁机": {
+      "current_order": null,
+      "start_time": null,
+      "ready": false
+    },
+    "烘焙坊": {
+      "current_order": null,
+      "start_time": null,
+      "ready": false
+    }
+  },
+  "version": "3.0",
+  "_first_save_time": "2026-05-20 08:49:13",
+  "_last_cycles": 0,
+  "_last_disaster_time": "2026-05-21 08:45:08"
+}

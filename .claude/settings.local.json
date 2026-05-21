@@ -1,0 +1,9 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(python farm_tkinter_v2.py)",
+      "Bash(python -c \"from farm_game_v2 import get_merchant_discount, load_crops, new_save, try_level_up, write_save, calc_offline; print\\('All imports OK'\\); print\\(f'get_merchant_discount\\(empty\\)={get_merchant_discount\\({}\\)}'\\)\")",
+      "Bash(python -c \"from farm_tkinter_v2 import *; print\\('Tkinter imports OK'\\)\")"
+    ]
+  }
+}
