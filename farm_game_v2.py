@@ -91,6 +91,7 @@ EVENTS = [
     {"name": "pest_attack", "desc": "🐛 虫灾！部分作物受损！", "duration": 0, "positive": False},
     {"name": "wind_damage", "desc": "🌪️ 暴风！一块土地被吹毁！", "duration": 0, "positive": False},
     {"name": "merchant_visit", "desc": "🧑‍🌾 神秘商人光临！种子8折优惠！", "duration": 5, "positive": True},
+    {"name": "alien_attack", "desc": "👽 外星人飞船降临！作物被毁但留下了1000💰赔偿！", "duration": 0, "positive": False},
 ]
 
 # ============ 核心工具函数（原在 farm.py 完整版中） ============
@@ -230,6 +231,17 @@ def _apply_event_effect(data, event, crops):
                 print(f"  💨 {t['crop']} 被暴风吹毁！")
                 t["crop"] = None
                 t["plant_time"] = None
+        elif event["name"] == "alien_attack":
+            lands = data.get("lands", [])
+            targets = [l for l in lands if l.get("crop")]
+            if targets:
+                damaged = random.sample(targets, min(random.randint(1, 3), len(targets)))
+                for t in damaged:
+                    print(f"  👽 {t['crop']} 被外星人飞船损坏！")
+                    t["crop"] = None
+                    t["plant_time"] = None
+            data["gold"] = data.get("gold", 0) + 1000
+            print(f"  💰 外星人留下1000💰作为赔偿！")
 
 def try_trigger_event(data, crops):
     """尝试触发随机事件（约10%概率）
