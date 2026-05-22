@@ -1,173 +1,423 @@
 {
-  "gold": 11122,
-  "level": 11,
-  "exp": 68,
-  "talent_points": 3,
-  "last_save_time": "2026-05-21 09:13:51",
+  "gold": 44861,
+  "level": 21,
+  "exp": 1847,
+  "talent_points": 8,
+  "last_save_time": "2026-05-22 17:04:46",
   "lands": [
     {
       "id": 1,
       "crop": "南瓜",
-      "plant_time": "2026-05-21 08:56:36",
-      "upgrade_level": 1
+      "plant_time": "2026-05-22 15:41:57",
+      "upgrade_level": 6,
+      "golden_pumpkin": false,
+      "_maturity_roll_done": false
     },
     {
       "id": 2,
       "crop": "南瓜",
-      "plant_time": "2026-05-21 08:56:36",
-      "upgrade_level": 1
+      "plant_time": "2026-05-22 15:41:57",
+      "upgrade_level": 1,
+      "golden_pumpkin": false,
+      "_maturity_roll_done": false
     },
     {
       "id": 3,
       "crop": "南瓜",
-      "plant_time": "2026-05-21 08:56:36",
-      "upgrade_level": 1
+      "plant_time": "2026-05-22 15:59:19",
+      "upgrade_level": 1,
+      "golden_pumpkin": false,
+      "_maturity_roll_done": false
     },
     {
       "id": 4,
       "crop": "南瓜",
-      "plant_time": "2026-05-21 08:56:36",
-      "upgrade_level": 1
+      "plant_time": "2026-05-22 15:41:57",
+      "upgrade_level": 1,
+      "golden_pumpkin": false,
+      "_maturity_roll_done": false
     },
     {
       "id": 5,
       "crop": "南瓜",
-      "plant_time": "2026-05-21 08:58:21",
-      "upgrade_level": 1
+      "plant_time": "2026-05-22 15:41:57",
+      "upgrade_level": 1,
+      "golden_pumpkin": false,
+      "_maturity_roll_done": false
     },
     {
       "id": 6,
       "crop": "南瓜",
-      "plant_time": "2026-05-21 08:56:36",
-      "upgrade_level": 1
+      "plant_time": "2026-05-22 15:41:53",
+      "upgrade_level": 1,
+      "golden_pumpkin": false,
+      "_maturity_roll_done": false
     },
     {
       "id": 7,
       "crop": "南瓜",
-      "plant_time": "2026-05-21 08:56:36",
-      "upgrade_level": 1
+      "plant_time": "2026-05-22 15:41:53",
+      "upgrade_level": 1,
+      "golden_pumpkin": false,
+      "_maturity_roll_done": false
     },
     {
       "id": 8,
       "crop": "南瓜",
-      "plant_time": "2026-05-21 08:56:36",
-      "upgrade_level": 1
+      "plant_time": "2026-05-22 15:41:53",
+      "upgrade_level": 1,
+      "golden_pumpkin": false,
+      "_maturity_roll_done": false
     },
     {
       "id": 9,
       "crop": "南瓜",
-      "plant_time": "2026-05-21 08:58:21",
-      "upgrade_level": 1
+      "plant_time": "2026-05-22 15:41:53",
+      "upgrade_level": 1,
+      "golden_pumpkin": false,
+      "_maturity_roll_done": false
     },
     {
       "id": 10,
-      "crop": "胡萝卜",
-      "plant_time": "2026-05-21 08:57:51",
-      "upgrade_level": 1
+      "crop": "南瓜",
+      "plant_time": "2026-05-22 15:41:53",
+      "upgrade_level": 1,
+      "golden_pumpkin": false,
+      "_maturity_roll_done": false
     },
     {
       "id": 11,
-      "crop": "胡萝卜",
-      "plant_time": "2026-05-21 08:57:59",
-      "upgrade_level": 1
+      "crop": "南瓜",
+      "plant_time": "2026-05-22 15:41:53",
+      "upgrade_level": 1,
+      "golden_pumpkin": false,
+      "_maturity_roll_done": false
     },
     {
       "id": 12,
-      "crop": "胡萝卜",
-      "plant_time": "2026-05-21 08:57:59",
-      "upgrade_level": 1
+      "crop": "南瓜",
+      "plant_time": "2026-05-22 15:41:53",
+      "upgrade_level": 1,
+      "golden_pumpkin": false,
+      "_maturity_roll_done": false
     },
     {
       "id": 13,
-      "crop": "胡萝卜",
-      "plant_time": "2026-05-21 08:57:59",
-      "upgrade_level": 1
+      "crop": "南瓜",
+      "plant_time": "2026-05-22 15:41:53",
+      "upgrade_level": 1,
+      "golden_pumpkin": false,
+      "_maturity_roll_done": false
     },
     {
       "id": 14,
-      "crop": "胡萝卜",
-      "plant_time": "2026-05-21 08:57:59",
-      "upgrade_level": 1
+      "crop": "南瓜",
+      "plant_time": "2026-05-22 15:41:53",
+      "upgrade_level": 1,
+      "golden_pumpkin": false,
+      "_maturity_roll_done": false
     },
     {
       "id": 15,
-      "crop": "胡萝卜",
-      "plant_time": "2026-05-21 08:57:59",
-      "upgrade_level": 1
+      "crop": "南瓜",
+      "plant_time": "2026-05-22 15:41:57",
+      "upgrade_level": 1,
+      "golden_pumpkin": false,
+      "_maturity_roll_done": false
     },
     {
       "id": 16,
-      "crop": "胡萝卜",
-      "plant_time": "2026-05-21 08:57:59",
-      "upgrade_level": 1
+      "crop": "南瓜",
+      "plant_time": "2026-05-22 15:41:53",
+      "upgrade_level": 1,
+      "golden_pumpkin": false,
+      "_maturity_roll_done": false
     },
     {
       "id": 17,
-      "crop": "胡萝卜",
-      "plant_time": "2026-05-21 08:57:59",
-      "upgrade_level": 1
+      "crop": "南瓜",
+      "plant_time": "2026-05-22 15:41:53",
+      "upgrade_level": 1,
+      "golden_pumpkin": false,
+      "_maturity_roll_done": false
     },
     {
       "id": 18,
-      "crop": "胡萝卜",
-      "plant_time": "2026-05-21 08:57:59",
-      "upgrade_level": 1
+      "crop": "南瓜",
+      "plant_time": "2026-05-22 15:41:53",
+      "upgrade_level": 1,
+      "golden_pumpkin": false,
+      "_maturity_roll_done": false
     },
     {
       "id": 19,
-      "crop": "胡萝卜",
-      "plant_time": "2026-05-21 08:57:55",
-      "upgrade_level": 1
+      "crop": "南瓜",
+      "plant_time": "2026-05-22 15:41:53",
+      "upgrade_level": 1,
+      "golden_pumpkin": false,
+      "_maturity_roll_done": false
     },
     {
       "id": 20,
-      "crop": "玫瑰",
-      "plant_time": "2026-05-21 08:58:14",
-      "upgrade_level": 1
+      "crop": "南瓜",
+      "plant_time": "2026-05-22 15:41:53",
+      "upgrade_level": 1,
+      "golden_pumpkin": false,
+      "_maturity_roll_done": false
     },
     {
       "id": 21,
-      "crop": null,
-      "plant_time": null,
-      "upgrade_level": 1
+      "crop": "南瓜",
+      "plant_time": "2026-05-22 12:53:03",
+      "upgrade_level": 1,
+      "golden_pumpkin": true,
+      "_maturity_roll_done": true
     },
     {
       "id": 22,
-      "crop": null,
-      "plant_time": null,
-      "upgrade_level": 1
+      "crop": "南瓜",
+      "plant_time": "2026-05-22 15:41:53",
+      "upgrade_level": 1,
+      "golden_pumpkin": false,
+      "_maturity_roll_done": false
     },
     {
       "id": 23,
-      "crop": null,
-      "plant_time": null,
-      "upgrade_level": 1
+      "crop": "南瓜",
+      "plant_time": "2026-05-22 15:41:57",
+      "upgrade_level": 1,
+      "golden_pumpkin": false,
+      "_maturity_roll_done": false
     },
     {
       "id": 24,
-      "crop": null,
-      "plant_time": null,
-      "upgrade_level": 1
+      "crop": "南瓜",
+      "plant_time": "2026-05-22 15:42:12",
+      "upgrade_level": 1,
+      "golden_pumpkin": false,
+      "_maturity_roll_done": false
     },
     {
       "id": 25,
+      "crop": "南瓜",
+      "plant_time": "2026-05-22 15:42:12",
+      "upgrade_level": 1,
+      "golden_pumpkin": false,
+      "_maturity_roll_done": false
+    },
+    {
+      "id": 26,
+      "crop": "番茄",
+      "plant_time": "2026-05-22 16:59:27",
+      "upgrade_level": 1,
+      "golden_pumpkin": false,
+      "_maturity_roll_done": false
+    },
+    {
+      "id": 27,
+      "crop": "草莓",
+      "plant_time": "2026-05-22 16:59:36",
+      "upgrade_level": 1,
+      "golden_pumpkin": false,
+      "_maturity_roll_done": false
+    },
+    {
+      "id": 28,
+      "crop": "咖啡豆",
+      "plant_time": "2026-05-22 17:00:07",
+      "upgrade_level": 1,
+      "golden_pumpkin": false,
+      "_maturity_roll_done": false
+    },
+    {
+      "id": 29,
+      "crop": "棉花",
+      "plant_time": "2026-05-22 17:00:10",
+      "upgrade_level": 1,
+      "golden_pumpkin": false,
+      "_maturity_roll_done": false
+    },
+    {
+      "id": 30,
+      "crop": "甘蔗",
+      "plant_time": "2026-05-22 17:00:13",
+      "upgrade_level": 1,
+      "golden_pumpkin": false,
+      "_maturity_roll_done": false
+    },
+    {
+      "id": 31,
       "crop": null,
       "plant_time": null,
-      "upgrade_level": 1
+      "upgrade_level": 1,
+      "golden_pumpkin": false,
+      "_maturity_roll_done": false
+    },
+    {
+      "id": 32,
+      "crop": null,
+      "plant_time": null,
+      "upgrade_level": 1,
+      "golden_pumpkin": false,
+      "_maturity_roll_done": false
+    },
+    {
+      "id": 33,
+      "crop": null,
+      "plant_time": null,
+      "upgrade_level": 1,
+      "golden_pumpkin": false,
+      "_maturity_roll_done": false
+    },
+    {
+      "id": 34,
+      "crop": null,
+      "plant_time": null,
+      "upgrade_level": 1,
+      "golden_pumpkin": false,
+      "_maturity_roll_done": false
+    },
+    {
+      "id": 35,
+      "crop": null,
+      "plant_time": null,
+      "upgrade_level": 1,
+      "golden_pumpkin": false,
+      "_maturity_roll_done": false
+    },
+    {
+      "id": 36,
+      "crop": null,
+      "plant_time": null,
+      "upgrade_level": 1,
+      "golden_pumpkin": false,
+      "_maturity_roll_done": false
+    },
+    {
+      "id": 37,
+      "crop": null,
+      "plant_time": null,
+      "upgrade_level": 1,
+      "golden_pumpkin": false,
+      "_maturity_roll_done": false
+    },
+    {
+      "id": 38,
+      "crop": null,
+      "plant_time": null,
+      "upgrade_level": 1,
+      "golden_pumpkin": false,
+      "_maturity_roll_done": false
+    },
+    {
+      "id": 39,
+      "crop": null,
+      "plant_time": null,
+      "upgrade_level": 1,
+      "golden_pumpkin": false,
+      "_maturity_roll_done": false
+    },
+    {
+      "id": 40,
+      "crop": null,
+      "plant_time": null,
+      "upgrade_level": 1,
+      "golden_pumpkin": false,
+      "_maturity_roll_done": false
+    },
+    {
+      "id": 41,
+      "crop": null,
+      "plant_time": null,
+      "upgrade_level": 1,
+      "golden_pumpkin": false,
+      "_maturity_roll_done": false
+    },
+    {
+      "id": 42,
+      "crop": null,
+      "plant_time": null,
+      "upgrade_level": 1,
+      "golden_pumpkin": false,
+      "_maturity_roll_done": false
+    },
+    {
+      "id": 43,
+      "crop": null,
+      "plant_time": null,
+      "upgrade_level": 1,
+      "golden_pumpkin": false,
+      "_maturity_roll_done": false
+    },
+    {
+      "id": 44,
+      "crop": null,
+      "plant_time": null,
+      "upgrade_level": 1,
+      "golden_pumpkin": false,
+      "_maturity_roll_done": false
+    },
+    {
+      "id": 45,
+      "crop": null,
+      "plant_time": null,
+      "upgrade_level": 1,
+      "golden_pumpkin": false,
+      "_maturity_roll_done": false
+    },
+    {
+      "id": 46,
+      "crop": null,
+      "plant_time": null,
+      "upgrade_level": 1,
+      "golden_pumpkin": false,
+      "_maturity_roll_done": false
+    },
+    {
+      "id": 47,
+      "crop": null,
+      "plant_time": null,
+      "upgrade_level": 1,
+      "golden_pumpkin": false,
+      "_maturity_roll_done": false
+    },
+    {
+      "id": 48,
+      "crop": null,
+      "plant_time": null,
+      "upgrade_level": 1,
+      "golden_pumpkin": false,
+      "_maturity_roll_done": false
+    },
+    {
+      "id": 49,
+      "crop": null,
+      "plant_time": null,
+      "upgrade_level": 1,
+      "golden_pumpkin": false,
+      "_maturity_roll_done": false
+    },
+    {
+      "id": 50,
+      "crop": null,
+      "plant_time": null,
+      "upgrade_level": 1,
+      "golden_pumpkin": false,
+      "_maturity_roll_done": false
     }
   ],
   "barns": [
     {
       "id": 1,
       "unlocked": true,
-      "level": 1,
+      "level": 3,
       "animal": "鸡",
       "animal_type": "鸡",
       "purchase_time": "2026-05-20 14:46:36",
-      "age_stage": "adult",
-      "production_count": 36,
-      "last_produce_time": "2026-05-21 09:04:07",
-      "pending_product": 1,
+      "age_stage": "elder",
+      "production_count": 98,
+      "last_produce_time": "2026-05-22 16:54:50",
+      "pending_product": 0,
       "breed_cooldown": null,
       "fed_time": "2026-05-20 15:10:39"
     },
@@ -178,24 +428,24 @@
       "animal": "鸡",
       "animal_type": "鸡",
       "purchase_time": "2026-05-20 15:10:47",
-      "age_stage": "adult",
-      "production_count": 36,
-      "last_produce_time": "2026-05-21 09:04:07",
-      "pending_product": 1,
+      "age_stage": "elder",
+      "production_count": 97,
+      "last_produce_time": "2026-05-22 16:54:50",
+      "pending_product": 0,
       "breed_cooldown": null,
       "fed_time": "2026-05-20 15:11:09"
     },
     {
       "id": 3,
       "unlocked": true,
-      "level": 1,
+      "level": 3,
       "animal": "鸡",
       "animal_type": "鸡",
       "purchase_time": "2026-05-20 15:10:50",
-      "age_stage": "adult",
-      "production_count": 36,
-      "last_produce_time": "2026-05-21 09:04:07",
-      "pending_product": 1,
+      "age_stage": "elder",
+      "production_count": 98,
+      "last_produce_time": "2026-05-22 16:54:50",
+      "pending_product": 0,
       "breed_cooldown": null,
       "fed_time": "2026-05-20 15:11:09"
     },
@@ -206,10 +456,10 @@
       "animal": "鸡",
       "animal_type": "鸡",
       "purchase_time": "2026-05-20 15:10:55",
-      "age_stage": "adult",
-      "production_count": 36,
-      "last_produce_time": "2026-05-21 09:04:07",
-      "pending_product": 1,
+      "age_stage": "elder",
+      "production_count": 97,
+      "last_produce_time": "2026-05-22 16:54:50",
+      "pending_product": 0,
       "breed_cooldown": null,
       "fed_time": "2026-05-20 15:11:09"
     },
@@ -220,10 +470,10 @@
       "animal": "鸡",
       "animal_type": "鸡",
       "purchase_time": "2026-05-20 15:10:58",
-      "age_stage": "adult",
-      "production_count": 36,
-      "last_produce_time": "2026-05-21 09:04:07",
-      "pending_product": 1,
+      "age_stage": "elder",
+      "production_count": 97,
+      "last_produce_time": "2026-05-22 16:54:50",
+      "pending_product": 0,
       "breed_cooldown": null,
       "fed_time": "2026-05-20 15:11:09"
     },
@@ -231,15 +481,15 @@
       "id": 6,
       "unlocked": true,
       "level": 1,
-      "animal": "鸡",
-      "animal_type": "鸡",
-      "purchase_time": "2026-05-20 15:11:01",
-      "age_stage": "adult",
-      "production_count": 35,
-      "last_produce_time": "2026-05-21 09:13:34",
-      "pending_product": 1,
+      "animal": "牛",
+      "animal_type": "牛",
+      "purchase_time": "2026-05-22 08:55:30",
+      "age_stage": "juvenile",
+      "production_count": 1,
+      "last_produce_time": "2026-05-22 14:10:19",
+      "pending_product": 0,
       "breed_cooldown": null,
-      "fed_time": "2026-05-20 15:55:45"
+      "fed_time": "2026-05-22 10:30:19"
     },
     {
       "id": 7,
@@ -248,12 +498,12 @@
       "animal": "鹅",
       "animal_type": "鹅",
       "purchase_time": "2026-05-21 08:57:06",
-      "age_stage": "juvenile",
-      "production_count": 0,
-      "last_produce_time": null,
+      "age_stage": "adult",
+      "production_count": 17,
+      "last_produce_time": "2026-05-22 15:41:40",
       "pending_product": 0,
       "breed_cooldown": null,
-      "fed_time": null
+      "fed_time": "2026-05-21 11:46:25"
     },
     {
       "id": 8,
@@ -262,10 +512,10 @@
       "animal": "兔",
       "animal_type": "兔",
       "purchase_time": "2026-05-21 08:57:10",
-      "age_stage": "juvenile",
-      "production_count": 1,
-      "last_produce_time": "2026-05-21 09:07:33",
-      "pending_product": 1,
+      "age_stage": "adult",
+      "production_count": 30,
+      "last_produce_time": "2026-05-22 16:21:24",
+      "pending_product": 0,
       "breed_cooldown": null,
       "fed_time": "2026-05-21 08:57:30"
     },
@@ -276,10 +526,10 @@
       "animal": "鸭",
       "animal_type": "鸭",
       "purchase_time": "2026-05-21 08:57:14",
-      "age_stage": "juvenile",
-      "production_count": 1,
-      "last_produce_time": "2026-05-21 09:07:33",
-      "pending_product": 1,
+      "age_stage": "elder",
+      "production_count": 41,
+      "last_produce_time": "2026-05-22 16:31:01",
+      "pending_product": 0,
       "breed_cooldown": null,
       "fed_time": "2026-05-21 08:57:30"
     },
@@ -290,124 +540,124 @@
       "animal": "鹅",
       "animal_type": "鹅",
       "purchase_time": "2026-05-21 08:57:18",
+      "age_stage": "adult",
+      "production_count": 17,
+      "last_produce_time": "2026-05-22 15:41:40",
+      "pending_product": 0,
+      "breed_cooldown": null,
+      "fed_time": "2026-05-21 11:46:25"
+    },
+    {
+      "id": 11,
+      "unlocked": true,
+      "level": 1,
+      "animal": "羊",
+      "animal_type": "羊",
+      "purchase_time": "2026-05-21 14:29:47",
+      "age_stage": "adult",
+      "production_count": 13,
+      "last_produce_time": "2026-05-22 17:04:09",
+      "pending_product": 0,
+      "breed_cooldown": "2026-05-22 15:19:12",
+      "fed_time": "2026-05-21 14:30:15"
+    },
+    {
+      "id": 12,
+      "unlocked": true,
+      "level": 1,
+      "animal": "羊",
+      "animal_type": "羊",
+      "purchase_time": "2026-05-21 14:30:04",
+      "age_stage": "adult",
+      "production_count": 12,
+      "last_produce_time": "2026-05-22 17:04:09",
+      "pending_product": 0,
+      "breed_cooldown": null,
+      "fed_time": "2026-05-21 15:08:06"
+    },
+    {
+      "id": 13,
+      "unlocked": true,
+      "level": 1,
+      "animal": "羊",
+      "animal_type": "羊",
+      "purchase_time": "2026-05-21 14:30:08",
+      "age_stage": "adult",
+      "production_count": 12,
+      "last_produce_time": "2026-05-22 17:04:09",
+      "pending_product": 0,
+      "breed_cooldown": "2026-05-22 15:19:12",
+      "fed_time": "2026-05-21 15:08:06"
+    },
+    {
+      "id": 14,
+      "unlocked": true,
+      "level": 1,
+      "animal": "牛",
+      "animal_type": "牛",
+      "purchase_time": "2026-05-22 11:05:13",
+      "age_stage": "juvenile",
+      "production_count": 1,
+      "last_produce_time": "2026-05-22 14:10:19",
+      "pending_product": 0,
+      "breed_cooldown": null,
+      "fed_time": "2026-05-22 11:05:32"
+    },
+    {
+      "id": 15,
+      "unlocked": true,
+      "level": 1,
+      "animal": "羊",
+      "animal_type": "羊",
+      "purchase_time": "2026-05-22 11:05:17",
+      "age_stage": "juvenile",
+      "production_count": 1,
+      "last_produce_time": "2026-05-22 16:21:24",
+      "pending_product": 0,
+      "breed_cooldown": null,
+      "fed_time": "2026-05-22 14:17:40"
+    },
+    {
+      "id": 16,
+      "unlocked": true,
+      "level": 1,
+      "animal": "猪",
+      "animal_type": "猪",
+      "purchase_time": "2026-05-22 11:05:21",
+      "age_stage": "juvenile",
+      "production_count": 1,
+      "last_produce_time": "2026-05-22 16:54:50",
+      "pending_product": 0,
+      "breed_cooldown": null,
+      "fed_time": "2026-05-22 14:17:40"
+    },
+    {
+      "id": 17,
+      "unlocked": true,
+      "level": 1,
+      "animal": "羊宝宝",
+      "animal_type": "羊",
+      "purchase_time": "2026-05-22 14:49:12",
+      "age_stage": "juvenile",
+      "production_count": 0,
+      "last_produce_time": "2026-05-22 16:49:12",
+      "pending_product": 0,
+      "breed_cooldown": null,
+      "fed_time": "2026-05-22 15:59:07"
+    },
+    {
+      "id": 18,
+      "unlocked": true,
+      "level": 1,
+      "animal": "蜜蜂",
+      "animal_type": "蜜蜂",
+      "purchase_time": "2026-05-22 16:55:10",
       "age_stage": "juvenile",
       "production_count": 0,
       "last_produce_time": null,
       "pending_product": 0,
       "breed_cooldown": null,
-      "fed_time": null
-    },
-    {
-      "id": 11,
-      "unlocked": false,
-      "level": 1,
-      "animal": null,
-      "animal_type": null,
-      "purchase_time": null,
-      "age_stage": null,
-      "production_count": 0,
-      "last_produce_time": null,
-      "pending_product": 0,
-      "breed_cooldown": null,
-      "fed_time": null
-    },
-    {
-      "id": 12,
-      "unlocked": false,
-      "level": 1,
-      "animal": null,
-      "animal_type": null,
-      "purchase_time": null,
-      "age_stage": null,
-      "production_count": 0,
-      "last_produce_time": null,
-      "pending_product": 0,
-      "breed_cooldown": null,
-      "fed_time": null
-    },
-    {
-      "id": 13,
-      "unlocked": false,
-      "level": 1,
-      "animal": null,
-      "animal_type": null,
-      "purchase_time": null,
-      "age_stage": null,
-      "production_count": 0,
-      "last_produce_time": null,
-      "pending_product": 0,
-      "breed_cooldown": null,
-      "fed_time": null
-    },
-    {
-      "id": 14,
-      "unlocked": false,
-      "level": 1,
-      "animal": null,
-      "animal_type": null,
-      "purchase_time": null,
-      "age_stage": null,
-      "production_count": 0,
-      "last_produce_time": null,
-      "pending_product": 0,
-      "breed_cooldown": null,
-      "fed_time": null
-    },
-    {
-      "id": 15,
-      "unlocked": false,
-      "level": 1,
-      "animal": null,
-      "animal_type": null,
-      "purchase_time": null,
-      "age_stage": null,
-      "production_count": 0,
-      "last_produce_time": null,
-      "pending_product": 0,
-      "breed_cooldown": null,
-      "fed_time": null
-    },
-    {
-      "id": 16,
-      "unlocked": false,
-      "level": 1,
-      "animal": null,
-      "animal_type": null,
-      "purchase_time": null,
-      "age_stage": null,
-      "production_count": 0,
-      "last_produce_time": null,
-      "pending_product": 0,
-      "breed_cooldown": null,
-      "fed_time": null
-    },
-    {
-      "id": 17,
-      "unlocked": false,
-      "level": 1,
-      "animal": null,
-      "animal_type": null,
-      "purchase_time": null,
-      "age_stage": null,
-      "production_count": 0,
-      "last_produce_time": null,
-      "pending_product": 0,
-      "breed_cooldown": null,
-      "fed_time": null
-    },
-    {
-      "id": 18,
-      "unlocked": false,
-      "level": 1,
-      "animal": null,
-      "animal_type": null,
-      "purchase_time": null,
-      "age_stage": null,
-      "production_count": 0,
-      "last_produce_time": null,
-      "pending_product": 0,
-      "breed_cooldown": null,
-      "fed_time": null
+      "fed_time": "2026-05-22 17:04:40"
     },
     {
       "id": 19,
@@ -858,7 +1108,7 @@
       "fed_time": null
     }
   ],
-  "unlocked_barns": 10,
+  "unlocked_barns": 18,
   "feed_inventory": {
     "基础饲料": 7,
     "精制饲料": 0,
@@ -871,43 +1121,60 @@
     "start_time": null,
     "ready": false
   },
-  "barn_total_collects": 217,
-  "unlocked_lands": 20,
-  "diamond": 0,
-  "total_harvests": 52,
-  "total_earnings": 13920,
+  "barn_total_collects": 715,
+  "unlocked_lands": 30,
+  "diamond": 5,
+  "total_harvests": 168,
+  "total_earnings": 23265,
   "total_processed": 0,
   "talent_tree": {
     "double_harvest": 5,
     "auto_collect": 1,
-    "process_speed": 1
+    "process_speed": 1,
+    "yield_bonus": 5
   },
   "achievements": [
-    "第一桶金",
     "养殖新手",
+    "第一桶金",
     "土地大亨",
-    "初次收获"
+    "天赋异禀",
+    "初次收获",
+    "丰收达人"
   ],
   "event_active": {
-    "harvest_festival": "2026-05-21 08:45:58",
-    "golden_hour": "2026-05-21 09:04:57"
+    "rain_bless": "2026-05-22 16:55:16",
+    "harvest_festival": "2026-05-22 17:00:07"
   },
   "inventory": {
     "crops": {
-      "小麦": 8,
-      "玉米": 5,
-      "玫瑰": 8
+      "小麦": 9,
+      "玉米": 27,
+      "玫瑰": 25,
+      "胡萝卜": 14,
+      "南瓜": 115,
+      "水稻": 10
     },
     "seeds": {
-      "小麦": 6,
-      "玉米": 4,
-      "水稻": 0,
-      "玫瑰": 1,
-      "南瓜": 7,
-      "胡萝卜": 6
+      "小麦": 5,
+      "玉米": 5,
+      "水稻": 5,
+      "玫瑰": 4,
+      "南瓜": 2,
+      "胡萝卜": 4,
+      "番茄": 1,
+      "草莓": 1,
+      "咖啡豆": 0,
+      "棉花": 1,
+      "甘蔗": 0
     },
     "products": {
-      "鸡蛋": 209
+      "鸡蛋": 426,
+      "兔毛": 30,
+      "鸭蛋": 41,
+      "鹅蛋": 34,
+      "羊毛": 38,
+      "牛奶": 2,
+      "猪肉": 1
     }
   },
   "factories": {
@@ -944,6 +1211,6 @@
   },
   "version": "3.0",
   "_first_save_time": "2026-05-20 08:49:13",
-  "_last_cycles": 0,
-  "_last_disaster_time": "2026-05-21 08:45:08"
+  "_last_cycles": 27,
+  "_last_disaster_time": "2026-05-22 14:16:56"
 }
