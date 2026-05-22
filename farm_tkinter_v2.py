@@ -452,7 +452,6 @@ class FarmGUIv2:
         actions = [
             ("1", "🌱 种植", self._on_plant),
             ("3", "🌾 收获", self._on_harvest),
-            ("7", "⬆️ 升级土地", self._on_upgrade_land),
             ("8", "🔓 解锁土地", self._on_unlock_land),
             ("5", "🏭 加工", self._on_factories),
             ("6", "📦 仓库", self._on_warehouse),
@@ -543,7 +542,6 @@ class FarmGUIv2:
             ("feed_factory", "🏭 饲料加工", self._on_feed_factory),
             ("breed", "🧬 繁殖", self._on_breed),
             ("warehouse", "📦 仓库", self._on_warehouse),
-            ("upgrade", "⬆️ 升级栏位", self._on_upgrade_barn),
             ("unlock", "🔓 解锁栏位", self._on_unlock_barn),
         ]
         self.barn_action_btns = {}
@@ -730,8 +728,9 @@ class FarmGUIv2:
                 land = d["lands"][lid - 1]
 
                 if not land["crop"]:
+                    lv_show = land.get("upgrade_level", 1)
                     self.land_canvas.create_rectangle(x0, y0, x1, y1, fill=COLORS["land_empty"], outline="#c0b090", width=1)
-                    self.land_canvas.create_text(cx, cy_, text=f"#{lid}\n⬜", font=ft, fill="#666", justify="center")
+                    self.land_canvas.create_text(cx, cy_, text=f"#{lid}\n⬜\nLv.{lv_show}", font=ft, fill="#666", justify="center")
                 else:
                     pt = parse_dt(land["plant_time"])
                     growth = calc_growth_time(land["crop"], land["upgrade_level"], d["talent_tree"])
@@ -748,8 +747,9 @@ class FarmGUIv2:
                         bg_c, border = COLORS["land_growing"], "#d0c080"
                     self.land_canvas.create_rectangle(x0, y0, x1, y1, fill=bg_c, outline=border, width=1)
 
-                    # 土地编号
-                    self.land_canvas.create_text(cx, y0 + 4, text=f"#{lid}", font=ft2, fill="#333", anchor="n")
+                    # 土地编号 + 等级
+                    lv_show = land.get("upgrade_level", 1)
+                    self.land_canvas.create_text(cx, y0 + 4, text=f"#{lid} Lv.{lv_show}", font=ft2, fill="#333", anchor="n")
 
                     # 作物图标（金色南瓜用特殊图标）
                     size = min(cell_w, cell_h) * 0.55
@@ -935,7 +935,7 @@ class FarmGUIv2:
         return triggered
 
     def _on_land_click(self, event):
-        """点击 Canvas 土地网格"""
+        """点击 Canvas 土地网格（含升级、收获、种植），升级不关闭弹窗"""
         cw = self.land_canvas.winfo_width()
         ch = self.land_canvas.winfo_height()
         col = int(event.x / cw * 10)
@@ -944,28 +944,89 @@ class FarmGUIv2:
         if lid > len(self.data["lands"]) or lid > self.data["unlocked_lands"]:
             return
         land = self.data["lands"][lid - 1]
+        d = self.data
+        is_golden = land.get("golden_pumpkin", False)
+
+        dialog = tk.Toplevel(self.root)
+        dialog.title(f"土地 #{lid}")
+        dialog.geometry("300x260")
+        dialog.transient(self.root)
+        dialog.grab_set()
+        dialog.configure(bg=COLORS["bg"])
+
+        info_text = tk.StringVar()
+        info_label = tk.Label(dialog, textvariable=info_text, font=F["normal"],
+                              bg=COLORS["bg"], justify="left")
+        info_label.pack(pady=(12, 2), padx=12)
+
+        btn_frame = tk.Frame(dialog, bg=COLORS["bg"])
+        btn_frame.pack(pady=(5, 12))
+
+        def refresh_info():
+            lv = land.get("upgrade_level", 1)
+            crop_name = "金色南瓜🌟" if is_golden else (land["crop"] or "空闲")
+            cost = land_upgrade_cost(lv) if lv < 10 else None
+            lines = [f"土地 #{lid}  Lv.{lv}", f"作物: {crop_name}"]
+            if cost:
+                ok = "✅" if d["gold"] >= cost else "❌"
+                lines.append(f"升级: {cost}💰 {ok}")
+            else:
+                lines.append("已满级 ✅")
+            if land["crop"]:
+                pt = parse_dt(land["plant_time"])
+                growth = calc_growth_time(land["crop"], land["upgrade_level"], d["talent_tree"])
+                if is_golden:
+                    growth *= 2
+                remain = growth - (now_dt() - pt).total_seconds() / 60.0
+                if remain > 0:
+                    m, sec = int(remain), int((remain - int(remain)) * 60)
+                    lines.append(f"剩余: {m}分{sec}秒")
+            info_text.set("\n".join(lines))
+            return lv
+
+        def do_upgrade():
+            lv = land.get("upgrade_level", 1)
+            if lv >= 10:
+                messagebox.showinfo("提示", "已满级！")
+                return
+            cost = land_upgrade_cost(lv)
+            if not cost or d["gold"] < cost:
+                messagebox.showwarning("金币不足", f"需要 {cost}💰")
+                return
+            d["gold"] -= cost
+            land["upgrade_level"] += 1
+            self._log(f"⬆️ 土地 #{lid} 升级到 Lv.{land['upgrade_level']}")
+            new_lv = refresh_info()
+            if new_lv >= 10:
+                upgrade_btn.config(text="已满级", state="disabled")
+            self._update_ui()
+
+        first_lv = refresh_info()
+
         if land["crop"]:
-            is_golden = land.get("golden_pumpkin", False)
             pt = parse_dt(land["plant_time"])
-            growth = calc_growth_time(land["crop"], land["upgrade_level"], self.data["talent_tree"])
+            growth = calc_growth_time(land["crop"], land["upgrade_level"], d["talent_tree"])
             if is_golden:
                 growth *= 2
             remain = growth - (now_dt() - pt).total_seconds() / 60.0
             if remain <= 0:
-                name = "金色南瓜🌟" if is_golden else land["crop"]
-                if messagebox.askyesno("收获", f"第 {lid} 号土地的 {name} 已成熟，收获吗？"):
-                    self._harvest_single(lid)
-            else:
-                name = "金色南瓜" if is_golden else land["crop"]
-                m = int(remain)
-                s = int((remain - m) * 60)
-                messagebox.showinfo("生长中", f"第 {lid} 号土地\n"
-                                    f"作物：{name}\n"
-                                    f"剩余：{m}分{s}秒\n"
-                                    f"等级：Lv.{land['upgrade_level']}")
+                icon = "🌟" if is_golden else "🌾"
+                tk.Button(btn_frame, text=f"{icon} 收获", font=F["button"],
+                          command=lambda: [self._harvest_single(lid), dialog.destroy()],
+                          bg="#d4edda", width=12).pack(pady=2)
         else:
-            if lid <= self.data["unlocked_lands"]:
-                self._show_plant_dialog(lid)
+            tk.Button(btn_frame, text="🌱 种植", font=F["button"],
+                      command=lambda: [self._show_plant_dialog(lid), dialog.destroy()],
+                      bg=COLORS["btn_bg"], width=12).pack(pady=2)
+
+        upgrade_btn = tk.Button(btn_frame, text="⬆️ 升级", font=F["button"],
+                                command=do_upgrade, bg=COLORS["btn_bg"], width=12)
+        if first_lv >= 10:
+            upgrade_btn.config(text="已满级", state="disabled")
+        upgrade_btn.pack(pady=2)
+
+        tk.Button(btn_frame, text="❌ 关闭", font=F["button"],
+                  command=dialog.destroy, bg=COLORS["btn_bg"], width=12).pack(pady=2)
 
     def _harvest_single(self, lid):
         """收获单块土地（含金色南瓜彩蛋）"""
@@ -1938,7 +1999,7 @@ class FarmGUIv2:
     # ==================== 养殖场操作 ====================
 
     def _on_barn_click(self, event):
-        """点击 Canvas 养殖栏位"""
+        """点击 Canvas 养殖栏位（含升级、收集、出售），升级不关闭弹窗"""
         cw = self.barn_canvas.winfo_width()
         ch = self.barn_canvas.winfo_height()
         col = int(event.x / cw * 10)
@@ -1950,57 +2011,123 @@ class FarmGUIv2:
             return
         barn = d["barns"][bid - 1]
 
+        # ---- 公共：空闲/有动物都显示自定义弹窗 ----
+        dialog = tk.Toplevel(self.root)
+        dialog.title(f"栏位 #{bid}")
+        dialog.geometry("300x300")
+        dialog.transient(self.root)
+        dialog.grab_set()
+        dialog.configure(bg=COLORS["bg"])
+
+        info_text = tk.StringVar()
+        info_label = tk.Label(dialog, textvariable=info_text, font=F["normal"],
+                              bg=COLORS["bg"], justify="left")
+        info_label.pack(pady=(12, 2), padx=12)
+
+        btn_frame = tk.Frame(dialog, bg=COLORS["bg"])
+        btn_frame.pack(pady=(5, 10))
+
+        def refresh_barn_info():
+            lv = barn.get("level", 1)
+            if barn["animal"] is None:
+                cost = barn_upgrade_cost(lv) if lv < 10 else None
+                lines = [f"栏位 #{bid}  Lv.{lv}", "空闲"]
+                if cost:
+                    ok = "✅" if d["gold"] >= cost else "❌"
+                    lines.append(f"升级: {cost}💰 {ok}")
+                else:
+                    lines.append("已满级 ✅")
+            else:
+                a = get_barn_animal(barn["animal_type"])
+                stage = get_age_stage(barn)
+                sn = {"juvenile": "幼年", "adult": "成年", "elder": "老年"}.get(stage, "成年")
+                pn = a["product"] if a else "?"
+                pp = a["sell_price"] if a else 0
+                sp = self._calc_barn_animal_sell_price(barn)
+                pd_ = barn.get("pending_product", 0)
+                cost = barn_upgrade_cost(lv) if lv < 10 else None
+                lines = [
+                    f"栏位 #{bid}  Lv.{lv}",
+                    f"动物: {barn['animal_type']} ({sn})",
+                    f"产品: {pn}({pp}💰)  待收:{pd_}",
+                    f"出售价: {sp}💰",
+                ]
+                if cost:
+                    ok = "✅" if d["gold"] >= cost else "❌"
+                    lines.append(f"升级: {cost}💰 {ok}")
+                else:
+                    lines.append("已满级 ✅")
+            info_text.set("\n".join(lines))
+            return lv
+
+        first_lv = refresh_barn_info()
+
+        # ---- 按钮区 ----
         if barn["animal"] is None:
-            # 空闲栏位 → 提示购买
-            if messagebox.askyesno("购买动物", f"栏位 #{bid} 空闲，要购买动物吗？"):
-                self._on_buy_barn_animal()
+            # 空闲：升级 + 购买 + 关闭
+            def upgrade_empty():
+                lv = barn.get("level", 1)
+                if lv >= 10:
+                    messagebox.showinfo("提示", "已满级！")
+                    return
+                cost = barn_upgrade_cost(lv)
+                if not cost or d["gold"] < cost:
+                    messagebox.showwarning("金币不足", f"需要 {cost}💰")
+                    return
+                d["gold"] -= cost
+                barn["level"] = lv + 1
+                self._log(f"⬆️ 栏位 #{bid} 升级到 Lv.{barn['level']}")
+                new_lv = refresh_barn_info()
+                if new_lv >= 10:
+                    upgrade_btn.config(text="已满级", state="disabled")
+                self._update_ui()
+
+            tk.Button(btn_frame, text="🐣 购买动物", font=F["button"],
+                      command=lambda: [self._on_buy_barn_animal(), dialog.destroy()],
+                      bg=COLORS["btn_bg"], width=14).pack(pady=2)
         else:
-            a = get_barn_animal(barn["animal_type"])
-            pending = barn.get("pending_product", 0)
-            stage = get_age_stage(barn)
-            stage_name = {"juvenile": "幼年", "adult": "成年", "elder": "老年"}.get(stage, "成年")
-            feed_desc = " + ".join(f"{k}×{v}" for k, v in a["feed"].items()) if a else "无"
-            prod_name = a["product"] if a else "?"
-            prod_price = a["sell_price"] if a else 0
+            # 有动物：收集 + 出售 + 升级 + 关闭
+            pd_ = barn.get("pending_product", 0)
+            if pd_ > 0:
+                tk.Button(btn_frame, text="📦 收集产品", font=F["button"],
+                          command=lambda: [self._collect_single_barn(bid), refresh_barn_info(), self._update_ui()],
+                          bg="#d4edda", width=14).pack(pady=2)
 
-            # 计算出售价格
-            sell_price = self._calc_barn_animal_sell_price(barn)
+            tk.Button(btn_frame, text="💰 出售动物", font=F["button"],
+                      command=lambda: [self._sell_barn_animal(bid), dialog.destroy()],
+                      bg=COLORS["btn_bg"], width=14).pack(pady=2)
 
-            info = (
-                f"栏位 #{bid}\n"
-                f"动物: {barn['animal_type']}\n"
-                f"阶段: {stage_name} (产出{barn.get('production_count', 0)}次)\n"
-                f"产品: {prod_name} (售价:{prod_price}💰)\n"
-                f"等级: Lv.{barn.get('level', 1)}\n"
-                f"饲料: {feed_desc}\n"
-                f"待收: {pending} 个\n"
-                f"出售价: {sell_price}💰"
-            )
+        upgrade_btn = tk.Button(btn_frame, text="⬆️ 升级", font=F["button"],
+                                command=None, bg=COLORS["btn_bg"], width=14)
 
-            # 自定义选择对话框
-            dialog = tk.Toplevel(self.root)
-            dialog.title(f"栏位 #{bid}")
-            dialog.geometry("320x280")
-            dialog.transient(self.root)
-            dialog.grab_set()
-            dialog.configure(bg=COLORS["bg"])
+        if barn["animal"] is None:
+            upgrade_btn.config(command=upgrade_empty)
+        else:
+            def upgrade_occupied():
+                lv = barn.get("level", 1)
+                if lv >= 10:
+                    messagebox.showinfo("提示", "已满级！")
+                    return
+                cost = barn_upgrade_cost(lv)
+                if not cost or d["gold"] < cost:
+                    messagebox.showwarning("金币不足", f"需要 {cost}💰")
+                    return
+                d["gold"] -= cost
+                barn["level"] = lv + 1
+                self._log(f"⬆️ 栏位 #{bid} 升级到 Lv.{barn['level']}")
+                new_lv = refresh_barn_info()
+                if new_lv >= 10:
+                    upgrade_btn.config(text="已满级", state="disabled")
+                self._update_ui()
 
-            tk.Label(dialog, text=info, font=F["normal"], bg=COLORS["bg"],
-                     justify="left").pack(pady=(15, 10), padx=15)
+            upgrade_btn.config(command=upgrade_occupied)
 
-            btn_frame = tk.Frame(dialog, bg=COLORS["bg"])
-            btn_frame.pack(pady=(5, 15))
+        if first_lv >= 10:
+            upgrade_btn.config(text="已满级", state="disabled")
+        upgrade_btn.pack(pady=2)
 
-            actions = []
-            if pending > 0:
-                actions.append(("📦 收集产品", lambda: self._collect_single_barn(bid)))
-            actions.append(("💰 出售动物", lambda: self._sell_barn_animal(bid)))
-            actions.append(("❌ 取消", dialog.destroy))
-
-            for text, cmd in actions:
-                tk.Button(btn_frame, text=text, font=F["button"],
-                         command=lambda c=cmd: [c(), dialog.destroy() if c != cmd or text != "❌ 取消" else None],
-                         bg=COLORS["btn_bg"], width=15).pack(pady=2)
+        tk.Button(btn_frame, text="❌ 关闭", font=F["button"],
+                  command=dialog.destroy, bg=COLORS["btn_bg"], width=14).pack(pady=2)
 
     def _calc_barn_animal_sell_price(self, barn):
         """计算出售动物的价格"""
