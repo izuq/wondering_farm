@@ -11,6 +11,7 @@ import random
 import threading
 import sys
 import io
+import os
 
 # ============ 从 farm_game_v2 导入所有逻辑（包含 barn 模块） ============
 from farm_game_v2 import (
@@ -418,6 +419,25 @@ class FarmGUIv2:
         self.root.geometry("1000x760")
         self.root.minsize(950, 720)
         self.root.configure(bg=COLORS["bg"])
+
+        # 设置窗口图标和任务栏图标
+        icon_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "南瓜农场.ico")
+        if os.path.exists(icon_path):
+            try:
+                self.root.iconbitmap(bitmap=icon_path)
+            except:
+                pass
+            try:
+                import ctypes
+                hwnd = self.root.winfo_id()
+                if isinstance(hwnd, str):
+                    hwnd = int(hwnd, 16) if hwnd.startswith("0x") else int(hwnd)
+                hicon = ctypes.windll.user32.LoadImageW(None, icon_path, 1, 0, 0, 0x00000010)
+                if hicon:
+                    ctypes.windll.user32.SendMessageW(hwnd, 0x0080, 1, hicon)
+                    ctypes.windll.user32.SendMessageW(hwnd, 0x0080, 0, hicon)
+            except:
+                pass
 
         # 游戏数据（使用 v2 加载以包含养殖场数据）
         init_game()
@@ -1464,10 +1484,10 @@ class FarmGUIv2:
         total_exp = 0
 
         for land in d["lands"][:d["unlocked_lands"]]:
-            if not land["crop"] or not land["plant_time"]:
-                continue
-            # 金色南瓜只能手动收获，一键收获跳过
+            # 金色南瓜必须跳过
             if land.get("golden_pumpkin"):
+                continue
+            if not land["crop"] or not land["plant_time"]:
                 continue
             c = self.crops.get(land["crop"])
             if not c:
@@ -1783,185 +1803,291 @@ class FarmGUIv2:
 
         dialog.wait_window()
 
+    def _calc_warehouse_value(self, d):
+        """计算仓库所有库存的总售价"""
+        total = 0
+        locked = d.setdefault("locked", {"crops": [], "products": [], "seeds": []})
+        # 种子
+        for name, qty in d["inventory"].get("seeds", {}).items():
+            if qty > 0 and name not in locked["seeds"]:
+                c = self.crops.get(name, {})
+                total += qty * int(c.get("seed_price", 0) * 0.5)
+        # 作物
+        for name, qty in d["inventory"].get("crops", {}).items():
+            if qty > 0 and name not in locked["crops"]:
+                if name == "金色南瓜":
+                    price = int(12000 * (1.0 + get_talent_value(d["talent_tree"], "sell_bonus")))
+                else:
+                    c = self.crops.get(name, {})
+                    price = int(c.get("sell_price", 0) * (1.0 + get_talent_value(d["talent_tree"], "sell_bonus")))
+                total += qty * price
+        # 加工品/动物产品
+        for name, qty in d["inventory"].get("products", {}).items():
+            if qty > 0 and name not in locked["products"]:
+                pf = next((x for x in FACTORY_LIST if x["product"] == name), None)
+                if pf:
+                    total += qty * pf["sell_price"]
+                    continue
+                an = next((a for a in BARN_ANIMALS_LIST if a["product"] == name), None)
+                if an:
+                    total += qty * an["sell_price"]
+        return total
+
     def _on_warehouse(self):
-        """仓库（含种子半价回收）"""
+        """仓库（勾选·锁定·批量出售）"""
         d = self.data
+        d.setdefault("locked", {"crops": [], "products": [], "seeds": []})
+        locked = d["locked"]
+
         dialog = tk.Toplevel(self.root)
         dialog.title("📦 仓库")
-        dialog.geometry("500x400")
+        dialog.geometry("720x520")
         dialog.transient(self.root)
         dialog.grab_set()
 
+        # ── 状态变量 ──
+        cb_vars = {}          # {(cat, name): BooleanVar}
+        sel_info = {"qty": 0}  # 选中总件数
+
+        def update_sel_label(lb):
+            lb.config(text=f"☑ 已选 {sel_info['qty']} 件")
+
+        # ── 顶栏 ──
+        top = tk.Frame(dialog, bg=COLORS["bg"])
+        top.pack(fill="x", padx=10, pady=(10, 2))
         usage = inventory_usage(d)
-        tk.Label(dialog, text=f"📦 仓库 ({usage}/{WAREHOUSE_CAPACITY})  金币: {d['gold']:,}",
-                 font=F["bold"]).pack(pady=(10, 5))
+        total_v = self._calc_warehouse_value(d)
+        tk.Label(top, text=f"📦 仓库 ({usage}/{WAREHOUSE_CAPACITY})", font=F["bold"],
+                 bg=COLORS["bg"]).pack(side="left")
+        tk.Label(top, text=f"  金币: {d['gold']:,}  ", font=F["bold"],
+                 bg=COLORS["bg"]).pack(side="left")
+        tk.Label(top, text=f"总价值: {total_v:,}💰", font=F["bold"],
+                 bg=COLORS["bg"]).pack(side="left")
 
-        frame = tk.Frame(dialog)
-        frame.pack(fill="both", expand=True, padx=10)
+        # ── 操作栏 ──
+        act = tk.Frame(dialog, bg=COLORS["bg"])
+        act.pack(fill="x", padx=10, pady=5)
 
-        canvas = tk.Canvas(frame, highlightthickness=0)
-        scrollbar = tk.Scrollbar(frame, orient="vertical", command=canvas.yview)
-        scroll_frame = tk.Frame(canvas)
-        scroll_frame.bind("<Configure>", lambda e: canvas.configure(scrollregion=canvas.bbox("all")))
-        canvas.create_window((0, 0), window=scroll_frame, anchor="nw")
+        sel_label = tk.Label(act, text="☑ 已选 0 件", font=F["small"], bg=COLORS["bg"])
+        sel_label.pack(side="left", padx=2)
+
+        def batch_sell():
+            items = []
+            for (cat, name), var in cb_vars.items():
+                if var.get() and d["inventory"][cat].get(name, 0) > 0:
+                    items.append((cat, name))
+            if not items:
+                return
+            total_gold = 0
+            total_qty = 0
+            for cat, name in items:
+                qty = d["inventory"][cat].get(name, 0)
+                if qty <= 0:
+                    continue
+                price = _get_price(cat, name)
+                total_gold += qty * price
+                total_qty += qty
+                del d["inventory"][cat][name]
+            d["gold"] += total_gold
+            d["total_earnings"] += total_gold
+            self._log(f"💰 批量出售 {total_qty} 件，获得 {total_gold}💰")
+            write_save_v2(d)
+            _rebuild_list()
+            self._update_ui()
+
+        tk.Button(act, text="✅ 出售选中", font=F["button"],
+                  command=batch_sell, bg="#d4edda").pack(side="left", padx=2)
+
+        def sell_all(cat, label):
+            inv = d["inventory"][cat]
+            locked_items = locked.get(cat, [])
+            total_gold = 0
+            total_qty = 0
+            for name, qty in list(inv.items()):
+                if name in locked_items or qty <= 0:
+                    continue
+                price = _get_price(cat, name)
+                total_gold += qty * price
+                total_qty += qty
+                del inv[name]
+            if total_qty > 0:
+                d["gold"] += total_gold
+                d["total_earnings"] += total_gold
+                write_save_v2(d)
+                self._log(f"💰 出售所有{label} {total_qty} 件，获得 {total_gold}💰")
+            else:
+                self._log(f"📦 没有{label}可出售")
+            _rebuild_list()
+            self._update_ui()
+
+        tk.Button(act, text="🌾 出售所有作物", font=F["button"],
+                  command=lambda: sell_all("crops", "作物"),
+                  bg="#d4edda").pack(side="left", padx=2)
+        tk.Button(act, text="📦 出售所有加工品", font=F["button"],
+                  command=lambda: sell_all("products", "加工品"),
+                  bg="#cce5ff").pack(side="left", padx=2)
+
+        # ── 滚动列表 ──
+        outer = tk.Frame(dialog)
+        outer.pack(fill="both", expand=True, padx=10, pady=5)
+
+        canvas = tk.Canvas(outer, highlightthickness=0, bg="#fafafa")
+        scrollbar = tk.Scrollbar(outer, orient="vertical", command=canvas.yview)
+        list_frame = tk.Frame(canvas, bg="#fafafa")
+        list_frame.bind("<Configure>",
+                        lambda e: canvas.configure(scrollregion=canvas.bbox("all")))
+        canvas.create_window((0, 0), window=list_frame, anchor="nw")
         canvas.configure(yscrollcommand=scrollbar.set)
         canvas.pack(side="left", fill="both", expand=True)
         scrollbar.pack(side="right", fill="y")
 
-        def sell_all_crops():
-            total_gold = 0
-            total_qty = 0
-            inv = d["inventory"]["crops"]
-            for name, qty in list(inv.items()):
-                if name == "金色南瓜":
-                    price = int(12000 * (1.0 + get_talent_value(d["talent_tree"], "sell_bonus")))
-                else:
-                    c = self.crops.get(name, {})
-                    price = int(c.get("sell_price", 0) * (1.0 + get_talent_value(d["talent_tree"], "sell_bonus")))
-                if d.get("event_active", {}).get("harvest_festival"):
-                    price *= 2
-                total_gold += qty * price
-                total_qty += qty
-                del inv[name]
-            if total_qty > 0:
-                d["gold"] += total_gold
-                d["total_earnings"] += total_gold
-                self._log(f"💰 出售所有作物，共 {total_qty} 件，获得 {total_gold}💰")
-            else:
-                self._log("📦 没有作物可出售")
-            dialog.destroy()
-            self._update_ui()
+        # 鼠标滚轮滚动
+        def _on_mw(e):
+            canvas.yview_scroll(int(-1 * (e.delta / 120)), "units")
+        canvas.bind("<MouseWheel>", _on_mw)
+        list_frame.bind("<MouseWheel>", _on_mw)
 
-        def _get_product_price(name):
-            """从工厂或动物配置查询产品售价"""
+        def _get_price(cat, name):
+            """获取单件售价"""
+            if cat == "seeds":
+                c = self.crops.get(name, {})
+                return int(c.get("seed_price", 0) * 0.5)
+            if name == "金色南瓜":
+                return int(12000 * (1.0 + get_talent_value(d["talent_tree"], "sell_bonus")))
+            c = self.crops.get(name, {})
+            if c.get("sell_price"):
+                p = int(c["sell_price"] * (1.0 + get_talent_value(d["talent_tree"], "sell_bonus")))
+                if d.get("event_active", {}).get("harvest_festival"):
+                    p *= 2
+                return p
             pf = next((x for x in FACTORY_LIST if x["product"] == name), None)
             if pf:
-                return pf["sell_price"]
+                p = int(pf["sell_price"] * (1.0 + get_talent_value(d["talent_tree"], "sell_bonus")))
+                if d.get("event_active", {}).get("harvest_festival"):
+                    p *= 2
+                return p
             an = next((a for a in BARN_ANIMALS_LIST if a["product"] == name), None)
             if an:
-                return an["sell_price"]
+                p = int(an["sell_price"] * (1.0 + get_talent_value(d["talent_tree"], "sell_bonus")))
+                if d.get("event_active", {}).get("harvest_festival"):
+                    p *= 2
+                return p
             return 0
 
-        def sell_all_products():
-            total_gold = 0
-            total_qty = 0
-            inv = d["inventory"]["products"]
-            for name, qty in list(inv.items()):
-                base_price = _get_product_price(name)
-                if base_price <= 0:
-                    continue
-                price = int(base_price * (1.0 + get_talent_value(d["talent_tree"], "sell_bonus")))
-                if d.get("event_active", {}).get("harvest_festival"):
-                    price *= 2
-                total_gold += qty * price
-                total_qty += qty
-                del inv[name]
-            if total_qty > 0:
-                d["gold"] += total_gold
-                d["total_earnings"] += total_gold
-                self._log(f"💰 出售所有产品，共 {total_qty} 件，获得 {total_gold}💰")
+        def make_item_row(cat, name, qty):
+            """创建一行物品显示"""
+            is_locked = name in locked.get(cat, [])
+            bg = "#f0f0f0" if is_locked else "#fff"
+            price = _get_price(cat, name)
+            subtotal = qty * price
+
+            row = tk.Frame(list_frame, bg=bg, relief="groove", bd=1)
+            row.pack(fill="x", padx=2, pady=1)
+
+            # 勾选框
+            if not is_locked and qty > 0:
+                var = tk.BooleanVar()
+                cb_vars[(cat, name)] = var
+
+                def on_check():
+                    total = 0
+                    for (c, n), v in cb_vars.items():
+                        if v.get():
+                            total += d["inventory"][c].get(n, 0)
+                    sel_info["qty"] = total
+                    update_sel_label(sel_label)
+
+                chk = tk.Checkbutton(row, variable=var, bg=bg,
+                                     command=on_check)
+                chk.pack(side="left", padx=(4, 0))
             else:
-                self._log("📦 没有产品可出售")
-            dialog.destroy()
-            self._update_ui()
+                tk.Label(row, text="  ", width=3, bg=bg).pack(side="left")
 
-        def sell_all_seeds():
-            total_gold = 0
-            total_qty = 0
-            inv = d["inventory"]["seeds"]
-            for name, qty in list(inv.items()):
-                c = self.crops.get(name, {})
-                price = int(c.get("seed_price", 0) * 0.5)
-                total_gold += qty * price
-                total_qty += qty
-                del inv[name]
-            if total_qty > 0:
-                d["gold"] += total_gold
-                d["total_earnings"] += total_gold
-                self._log(f"💰 出售所有种子，共 {total_qty} 件，获得 {total_gold}💰")
-            else:
-                self._log("📦 没有种子可出售")
-            dialog.destroy()
-            self._update_ui()
+            # 名称
+            fg = "#999" if is_locked else "#333"
+            tk.Label(row, text=name, width=14, anchor="w", bg=bg,
+                     font=F["small"], fg=fg).pack(side="left", padx=2)
 
-        btn_frame = tk.Frame(dialog)
-        btn_frame.pack(fill="x", padx=10, pady=5)
-        tk.Button(btn_frame, text="🌾 出售所有作物", font=F["button"],
-                  command=sell_all_crops, bg="#d4edda").pack(side="left", padx=5)
-        tk.Button(btn_frame, text="📦 出售所有加工品", font=F["button"],
-                  command=sell_all_products, bg="#cce5ff").pack(side="left", padx=5)
-        tk.Button(btn_frame, text="🌱 出售所有种子", font=F["button"],
-                  command=sell_all_seeds, bg="#fff3cd").pack(side="left", padx=5)
+            # 数量
+            tk.Label(row, text=f"×{qty}", width=5, anchor="e", bg=bg,
+                     font=F["small"], fg=fg).pack(side="left")
 
-        # 种子列表（半价回收）
-        if d["inventory"]["seeds"]:
-            tk.Label(scroll_frame, text="── 种子库存（半价回收）──", font=F["bold"],
-                     bg=COLORS["bg"]).pack(fill="x", pady=(5, 0))
-            for name, qty in sorted(d["inventory"]["seeds"].items()):
-                if qty <= 0:
-                    continue
-                c = self.crops.get(name, {})
-                price = int(c.get("seed_price", 0) * 0.5)
-                text = f"{name}  ×{qty}  →  {price}💰/个  =  {qty * price}💰"
+            # 单价
+            tk.Label(row, text=f"{price}💰", width=7, anchor="e", bg=bg,
+                     font=F["small"], fg=fg).pack(side="left")
 
-                def sell_seed_slider(n=name, p=price):
-                    self._sell_with_slider("出售种子", "seeds", n, p,
-                                           d["inventory"]["seeds"].get(n, 0), dialog)
+            # 小计
+            tk.Label(row, text=f"{subtotal:,}💰", width=10, anchor="e", bg=bg,
+                     font=F["small"], fg=fg).pack(side="left")
 
-                btn = tk.Button(scroll_frame, text=text, font=F["small"],
-                                anchor="w", padx=5, bg="#fff",
-                                relief="groove", bd=1, command=sell_seed_slider)
-                btn.pack(fill="x", padx=5, pady=2)
-
-        # 作物列表
-        if d["inventory"]["crops"]:
-            tk.Label(scroll_frame, text="── 作物库存 ──", font=F["bold"],
-                     bg=COLORS["bg"]).pack(fill="x", pady=(5, 0))
-            for name, qty in sorted(d["inventory"]["crops"].items()):
-                if qty <= 0:
-                    continue
-                if name == "金色南瓜":
-                    price = int(12000 * (1.0 + get_talent_value(d["talent_tree"], "sell_bonus")))
+            # 锁定按钮
+            def toggle_lock(c=cat, n=name):
+                lk = d.setdefault("locked", {"crops": [], "products": [], "seeds": []})
+                lst = lk.setdefault(c, [])
+                if n in lst:
+                    lst.remove(n)
                 else:
-                    c = self.crops.get(name, {})
-                    price = int(c.get("sell_price", 0) * (1.0 + get_talent_value(d["talent_tree"], "sell_bonus")))
-                if d.get("event_active", {}).get("harvest_festival"):
-                    price *= 2
-                text = f"{name}  ×{qty}  →  {price}💰/个  =  {qty * price}💰"
+                    lst.append(n)
+                _rebuild_list()
 
-                def sell_crop_slider(n=name, p=price):
-                    self._sell_with_slider("出售作物", "crops", n, p,
-                                           d["inventory"]["crops"].get(n, 0), dialog)
+            lock_text = "🔒" if is_locked else "🔓"
+            tk.Button(row, text=lock_text, font=F["small"], bg=bg, bd=0,
+                      cursor="hand2", command=toggle_lock).pack(side="left", padx=2)
 
-                btn = tk.Button(scroll_frame, text=text, font=F["small"],
-                                anchor="w", padx=5, bg="#fff",
-                                relief="groove", bd=1, command=sell_crop_slider)
-                btn.pack(fill="x", padx=5, pady=2)
+            # 出售按钮（锁定或数量为0时不显示）
+            if qty > 0 and not is_locked:
+                def sell_slider(c=cat, n=name, p=price):
+                    self._sell_with_slider(
+                        f"出售{n}", c, n, p,
+                        d["inventory"][c].get(n, 0),
+                        dialog, _rebuild_list)
 
-        # 加工品/动物产品列表
-        if d["inventory"]["products"]:
-            tk.Label(scroll_frame, text="── 产品库存 ──", font=F["bold"],
-                     bg=COLORS["bg"]).pack(fill="x", pady=(5, 0))
-            for name, qty in sorted(d["inventory"]["products"].items()):
-                if qty <= 0:
-                    continue
-                base_price = _get_product_price(name)
-                if base_price <= 0:
-                    continue
-                price = int(base_price * (1.0 + get_talent_value(d["talent_tree"], "sell_bonus")))
-                if d.get("event_active", {}).get("harvest_festival"):
-                    price *= 2
-                text = f"{name}  ×{qty}  →  {price}💰/个  =  {qty * price}💰"
+                tk.Button(row, text="出售", font=F["small"], bg="#d4edda",
+                          bd=1, command=sell_slider).pack(side="right", padx=2)
 
-                def sell_product_slider(n=name, p=price):
-                    self._sell_with_slider("出售产品", "products", n, p,
-                                           d["inventory"]["products"].get(n, 0), dialog)
+        def make_section(title, cat_key):
+            """创建一个分类区块"""
+            inv = d["inventory"].get(cat_key, {})
+            items = [(n, q) for n, q in inv.items() if q > 0]
+            if not items:
+                return
+            items.sort()
+            # 分类标题
+            lbl = f"── {title} ──"
+            tk.Label(list_frame, text=lbl, font=F["bold"], bg="#fafafa",
+                     fg="#555").pack(fill="x", pady=(8, 2), padx=4)
+            # 每一行
+            for name, qty in items:
+                make_item_row(cat_key, name, qty)
 
-                btn = tk.Button(scroll_frame, text=text, font=F["small"],
-                                anchor="w", padx=5, bg="#fff",
-                                relief="groove", bd=1, command=sell_product_slider)
-                btn.pack(fill="x", padx=5, pady=2)
+        def _rebuild_list():
+            """刷新整个列表"""
+            for w in list_frame.winfo_children():
+                w.destroy()
+            cb_vars.clear()
+            sel_info["qty"] = 0
+            update_sel_label(sel_label)
 
+            make_section("种子库存（半价回收）", "seeds")
+            make_section("作物库存", "crops")
+            make_section("产品库存", "products")
+
+            if not cb_vars and all(
+                not d["inventory"].get(cat, {})
+                for cat in ("seeds", "crops", "products")
+            ):
+                tk.Label(list_frame, text="(仓库为空)", font=F["small"],
+                         bg="#fafafa", fg="#999").pack(pady=20)
+
+            # 刷新顶栏金币和总价值
+            for w in top.winfo_children():
+                txt = w.cget("text")
+                if "金币" in txt:
+                    w.config(text=f"  金币: {d['gold']:,}  ")
+                elif "总价值" in txt:
+                    w.config(text=f"总价值: {self._calc_warehouse_value(d):,}💰")
+
+        _rebuild_list()
         dialog.wait_window()
 
     def _on_upgrade_land(self):
@@ -2769,7 +2895,7 @@ class FarmGUIv2:
     # ==================== 仓库出售滑行栏 ====================
 
     def _sell_with_slider(self, title, inv_category, item_name, unit_price,
-                          max_qty, warehouse_dialog):
+                          max_qty, parent_dialog=None, refresh_cb=None):
         """带滑行栏的数量选择出售对话框"""
         win = tk.Toplevel(self.root)
         win.title(title)
@@ -2814,8 +2940,12 @@ class FarmGUIv2:
             if inv[item_name] <= 0:
                 del inv[item_name]
             self._log(f"💰 出售 {item_name}×{qty}，获得 {gold}💰")
+            write_save_v2(self.data)
             win.destroy()
-            warehouse_dialog.destroy()
+            if callable(refresh_cb):
+                refresh_cb()
+            else:
+                parent_dialog.destroy()
             self._update_ui()
 
         tk.Button(btn_frame, text="✅ 出售", font=F["button"],
@@ -2837,5 +2967,10 @@ class FarmGUIv2:
 
 # ============ 入口 ============
 if __name__ == "__main__":
+    try:
+        import ctypes
+        ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID("PumpkinFarm")
+    except:
+        pass
     app = FarmGUIv2()
     app.run()

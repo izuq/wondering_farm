@@ -434,6 +434,7 @@ def load_save_v2():
     data.setdefault("total_earnings", 0)
     data.setdefault("total_processed", 0)
     data.setdefault("talent_points", 0)
+    data.setdefault("locked", {"crops": [], "products": [], "seeds": []})
     data.setdefault("talent_tree", {})
     data.setdefault("achievements", [])
     data.setdefault("event_active", {})
