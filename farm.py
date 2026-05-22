@@ -192,8 +192,8 @@ def calc_offline(data, crops):
 
 def try_level_up(data):
     """循环检测升级"""
-    while data["exp"] >= data["level"] * 100:
-        data["exp"] -= data["level"] * 100
+    while data["exp"] >= 80 + data["level"] * 40:
+        data["exp"] -= 80 + data["level"] * 40
         data["level"] += 1
         data["talent_points"] += 1
         print(f"🎉 升级！当前 Lv.{data['level']}，获得 1 天赋点！")
@@ -296,7 +296,7 @@ def do_harvest(data, crops):
 def show_status(data):
     """查看玩家状态"""
     planted = sum(1 for l in data["lands"] if l["crop"])
-    need = data["level"] * 100
+    need = 80 + data["level"] * 40
     print(f"\n{'=' * 45}")
     print(f"  👤 玩家状态")
     print(f"{'=' * 45}")
@@ -378,7 +378,7 @@ def clear():
 def header(data):
     """顶部状态栏"""
     planted = sum(1 for l in data["lands"] if l["crop"])
-    need = data["level"] * 100
+    need = 80 + data["level"] * 40
     print("=" * 58)
     print(f"  🌾 开心农场  |  💰 {data['gold']:>6,}  |  Lv.{data['level']:<3}  |  "
           f"✨ {data['exp']:>3}/{need}")

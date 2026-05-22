@@ -18,18 +18,30 @@ from farm import (
 from farm_game_v2 import (
     FACTORY_LIST, TALENTS_LIST, TALENT_GROUPS,
     ACHIEVEMENTS_LIST, FEED_RECIPES,
-    MAX_BARNS, INITIAL_BARNS, WAREHOUSE_CAPACITY,
+    MAX_BARNS, INITIAL_BARNS, warehouse_capacity,
     get_talent_value, get_talent_level, land_upgrade_cost,
     get_merchant_discount, now_dt, now_str, parse_dt,
     get_season, season_crop_bonus,
     load_save_v2, write_save_v2, calc_offline_v2,
     get_barn_animal, get_age_stage, can_barn_produce, check_feed_available,
     process_barn_production, collect_all_barns, barn_upgrade_cost, barn_upgrade_effects,
-    start_feed_production, collect_feed, check_feed_factory_ready,
+    start_feed_production, collect_feed, process_all_agro_buildings,
     do_breed, can_breed, check_baby_mature,
     check_factories_ready, check_achievements,
-    check_golden_pumpkin, auto_collect_barns, try_trigger_event,
+    check_golden_pumpkin, try_trigger_event,
+    cancel_event_warning, calc_harvest_yield, apply_exp_bonus, check_talent_fruit_drop,
+    reset_talents, use_talent_fruit, diamond_shop_purchase, DIAMOND_SHOP_ITEMS,
+    get_animal_feed_name, get_feed_consume,
     FEED_FRUIT_NAMES, BARN_ANIMALS_LIST, init_game,
+    # 农业建筑
+    MAX_AGRO_BUILDINGS, INITIAL_AGRO_BUILDINGS, FEED_RECIPES_BY_LEVEL,
+    agro_build_cost, agro_upgrade_cost, agro_unlock_cost,
+    get_available_recipes, check_agro_ready, process_all_agro_buildings,
+    _consume_recipe_ingredients, start_agro_production, collect_agro_product,
+    build_agro_building, upgrade_agro_building, get_agro_slot_status,
+    _feed_inv,
+    # 酿酒
+    BREW_RECIPES, get_recipe_list, get_recipes_by_level,
 )
 
 
@@ -251,7 +263,7 @@ def show_barn_header(data):
     total = data.get("unlocked_barns", INITIAL_BARNS)
     occupied = sum(1 for b in data["barns"][:total] if b["animal"] is not None)
     pending = sum(b.get("pending_product", 0) for b in data["barns"][:total])
-    feed_total = sum(data.get("feed_inventory", {}).values())
+    feed_total = sum(data.get("inventory", {}).get("feeds", {}).values())
     print(f"  🐔 栏位: {occupied}/{total}   待收: {pending}   饲料: {feed_total}份")
 
 
@@ -331,7 +343,7 @@ def show_barn_animals_detail(data):
             st = "⏳ 冷却中"
         print(f"  {i:>4}  {barn['animal_type']:<6}  {stage_name:<6}  {prod_name:<6}  {st}")
 
-    feed_inv = data.get("feed_inventory", {})
+    feed_inv = data.get("inventory", {}).get("feeds", {})
     if any(feed_inv.values()):
         print(f"\n  📦 饲料库存：")
         parts = [f"{k}: {v}份" for k, v in feed_inv.items() if v > 0]
@@ -347,7 +359,7 @@ def do_barn_main(data):
         print()
         show_barns(data)
 
-        print(f"  [1]购买动物  [2]收集产出  [3]繁殖  [4]饲料加工")
+        print(f"  [1]购买动物  [2]收集产出  [3]繁殖  [4]农业建筑")
         print(f"  [5]升级栏位  [6]详情  [7]解锁栏位  [0]返回")
         print()
 
@@ -361,7 +373,7 @@ def do_barn_main(data):
         elif choice == 3:
             do_breed_menu(data)
         elif choice == 4:
-            do_feed_menu(data)
+            do_agro_menu(data)
         elif choice == 5:
             do_upgrade_barn_menu(data)
         elif choice == 6:
@@ -508,66 +520,209 @@ def do_breed_menu(data):
     pause()
 
 
-def do_feed_menu(data):
-    """饲料加工菜单"""
+def do_agro_menu(data):
+    """农业建筑终端菜单"""
     while True:
         clear()
         header(data)
-        ff = data.get("feed_factory", {})
-        feed_inv = data.get("feed_inventory", {})
+        unlocked = data.get("unlocked_agro_buildings", INITIAL_AGRO_BUILDINGS)
+        slots = data.get("agro_buildings", [])
+        feed_inv = data.get("inventory", {}).get("feeds", {})
 
-        print(f"\n  🏭 饲料加工厂\n" + "=" * 50)
+        print(f"\n  🏗️ 农业建筑\n" + "=" * 50)
+        print(f"  已解锁：{unlocked}/{MAX_AGRO_BUILDINGS}")
         print(f"  饲料库存：")
-        parts = [f"{k}: {v}份" for k, v in feed_inv.items()]
+        parts = [f"{k}: {v}份" for k, v in feed_inv.items() if v > 0]
         print(f"    {' | '.join(parts) if parts else '空'}")
         print()
 
-        if ff.get("ready"):
-            print(f"  ✅ 饲料加工完成！")
-            print(f"  [C] 收取")
-        elif ff.get("current_order"):
-            st = parse_dt(ff["start_time"])
-            recipe = next((r for r in FEED_RECIPES if r["name"] == ff["current_order"]), None)
-            if recipe:
-                remain = max(0, recipe["time"] - (now_dt() - st).total_seconds() / 60.0)
-                print(f"  ⏳ 加工中：{ff['current_order']}  剩余 {remain:.0f}min")
+        if not any(s.get("building") for s in slots[:unlocked]):
+            print(f"  暂无建筑，请先建造！")
         else:
-            print(f"  选择配方加工：")
-            for i, r in enumerate(FEED_RECIPES, 1):
-                unlocked = data["level"] >= r["level"]
-                ings = []
-                for ing_name, ing_qty in r["ingredients"].items():
-                    ings.append(f"{ing_name}×{ing_qty}")
-                flag = "✅" if unlocked else "🔒"
-                print(f"  {i}. {r['name']:<6} {'+'.join(ings):<20} ⏱{r['time']}min → {r['yield']}份 {flag}")
-
-        print(f"\n  [0] 返回")
-        choice_raw = None
-        try:
-            raw = get_key(0.5)
-            if raw and raw in (b"c", b"C"):
-                if ff.get("ready"):
-                    collect_feed(data)
-                    pause()
+            for i in range(unlocked):
+                slot = slots[i]
+                if not slot.get("building"):
                     continue
-            else:
-                try:
-                    s = raw.decode() if raw else ""
-                    if s and s.isdigit():
-                        choice_raw = int(s)
-                except Exception:
-                    pass
+                status = get_agro_slot_status(slot)
+                print(f"  #{i+1} {status}")
+
+        print(f"\n  [B]建造  [U]升级  [P]加工  [C]收取")
+        print(f"  [L]解锁地块  [0]返回")
+        print()
+
+        key = get_key(None)
+        if key is None:
+            continue
+        try:
+            s = key.decode().lower()
         except Exception:
-            choice_raw = read_int(f"\n选择 (1-{len(FEED_RECIPES)}, 0返回): ", 0, len(FEED_RECIPES))
+            continue
 
-        if choice_raw == 0 or choice_raw is None:
-            choice_raw = read_int(f"\n选择 (0-{len(FEED_RECIPES)}): ", 0, len(FEED_RECIPES))
-            if choice_raw is None or choice_raw == 0:
-                break
+        if s == "0":
+            break
+        elif s == "b":
+            do_build_agro(data)
+        elif s == "u":
+            do_upgrade_agro_term(data)
+        elif s == "p":
+            do_start_agro_term(data)
+        elif s == "c":
+            do_collect_agro_term(data)
+        elif s == "l":
+            do_unlock_agro_term(data)
 
-        if choice_raw and choice_raw > 0 and choice_raw <= len(FEED_RECIPES):
-            start_feed_production(data, choice_raw - 1)
-            pause()
+
+def do_build_agro(data):
+    """建造农业建筑"""
+    unlocked = data.get("unlocked_agro_buildings", INITIAL_AGRO_BUILDINGS)
+    slots = data.get("agro_buildings", [])
+    free = [i for i in range(unlocked) if not slots[i].get("building")]
+    if not free:
+        print("\n❌ 所有已解锁地块都有建筑了！")
+        pause()
+        return
+    print(f"\n空地：{', '.join(str(i+1) for i in free)}")
+    idx = read_int(f"选择地块 (1-{unlocked}): ", 1, unlocked)
+    if idx is None:
+        return
+    # 选择建筑类型
+    print(f"\n建筑类型：")
+    print(f"  [1] 饲料加工厂（{agro_build_cost('feed_mill')}💰）")
+    print(f"  [2] 酿酒厂（{agro_build_cost('brewery')}💰）")
+    t = read_int("选择类型 (1-2): ", 1, 2)
+    if t is None:
+        return
+    btype = "brewery" if t == 2 else "feed_mill"
+    ok, msg = build_agro_building(data, idx - 1, btype)
+    print(f"\n{'✅' if ok else '❌'} {msg}")
+    pause()
+
+
+def do_upgrade_agro_term(data):
+    """升级建筑"""
+    unlocked = data.get("unlocked_agro_buildings", INITIAL_AGRO_BUILDINGS)
+    slots = data.get("agro_buildings", [])
+    built = [(i, s) for i in range(unlocked) if slots[i].get("building") and slots[i].get("level", 1) < 4]
+    if not built:
+        print("\n❌ 没有可升级的建筑！")
+        pause()
+        return
+    print(f"\n可升级建筑：")
+    for i, slot in built:
+        lv = slot.get("level", 1)
+        cost = agro_upgrade_cost(lv)
+        can = "✅" if data.get("gold", 0) >= cost else "❌"
+        btype = slot.get("building", "feed_mill")
+        bname = "酿酒厂" if btype == "brewery" else "加工厂"
+        print(f"  #{i+1} {bname} Lv.{lv}→Lv.{lv+1} {cost}💰 {can}")
+    idx = read_int(f"选择建筑 (1-{unlocked}): ", 1, unlocked)
+    if idx is None:
+        return
+    ok, msg = upgrade_agro_building(data, idx - 1)
+    print(f"\n{'✅' if ok else '❌'} {msg}")
+    pause()
+
+
+def do_start_agro_term(data):
+    """开始加工饲料"""
+    unlocked = data.get("unlocked_agro_buildings", INITIAL_AGRO_BUILDINGS)
+    slots = data.get("agro_buildings", [])
+    avail = [(i, s) for i in range(unlocked) if s.get("building") and (not s.get("order") or s.get("ready"))]
+    if not avail:
+        print("\n❌ 所有建筑都在加工中！")
+        pause()
+        return
+    print(f"\n可选建筑：")
+    for i, slot in avail:
+        btype = slot.get("building", "feed_mill")
+        bname = "酿酒厂" if btype == "brewery" else "加工厂"
+        recipes = get_available_recipes(slot.get("level", 1), btype)
+        recipe_names = ", ".join(r["name"] for r in recipes)
+        print(f"  #{i+1} {bname} Lv.{slot.get('level', 1)} → {recipe_names}")
+    idx = read_int(f"选择建筑 (1-{unlocked}): ", 1, unlocked)
+    if idx is None:
+        return
+    slot = slots[idx - 1]
+    btype = slot.get("building")
+    if not btype:
+        print("❌ 该地块没有建筑！")
+        pause()
+        return
+    recipes = get_available_recipes(slot.get("level", 1), btype)
+    if not recipes:
+        print("❌ 没有可用配方！")
+        pause()
+        return
+    print(f"\n可选配方：")
+    inv = data["inventory"]["crops"]
+    for j, re in enumerate(recipes, 1):
+        can = True
+        ing_parts = []
+        for ing_name, ing_qty in re["ingredients"].items():
+            if ing_name == "任意水果":
+                have = sum(inv.get(f, 0) for f in FEED_FRUIT_NAMES)
+            else:
+                have = inv.get(ing_name, 0)
+            stock = f"(库存:{have})" if have > 0 else "(库存:0)"
+            ing_parts.append(f"{ing_name}×{ing_qty}{stock}")
+            if have < ing_qty:
+                can = False
+        ings = ", ".join(ing_parts)
+        flag = "✅" if can else "❌"
+        print(f"  {j}. {re['name']} {ings} {re['time']}min/批 → {re['yield']}个 {flag}")
+    r_idx = read_int(f"选择配方 (1-{len(recipes)}): ", 1, len(recipes))
+    if r_idx is None:
+        return
+    recipe = recipes[r_idx - 1]
+    qty = read_int("批次数量: ", 1, 999)
+    if qty is None:
+        return
+    ok, msg = start_agro_production(data, idx - 1, recipe["name"], qty)
+    print(f"\n{'✅' if ok else '❌'} {msg}")
+    pause()
+
+
+def do_collect_agro_term(data):
+    """收取所有已完成饲料"""
+    unlocked = data.get("unlocked_agro_buildings", INITIAL_AGRO_BUILDINGS)
+    slots = data.get("agro_buildings", [])
+    ready_slots = [(i, s) for i in range(unlocked) if s.get("ready") or s.get("done_batches", 0) > 0]
+    if not ready_slots:
+        print("\n❌ 没有可收取的产品！")
+        pause()
+        return
+    total_all = 0
+    msgs = []
+    for idx, slot in ready_slots:
+        total, msg = collect_agro_product(data, idx)
+        if total > 0:
+            total_all += total
+            msgs.append(f"#{idx+1} {msg}")
+    if total_all > 0:
+        print(f"\n✅ 收取：{', '.join(msgs)}")
+    pause()
+
+
+def do_unlock_agro_term(data):
+    """解锁农业建筑地块"""
+    unlocked = data.get("unlocked_agro_buildings", INITIAL_AGRO_BUILDINGS)
+    if unlocked >= MAX_AGRO_BUILDINGS:
+        print("\n所有地块已解锁！")
+        pause()
+        return
+    cost = agro_unlock_cost(unlocked + 1)
+    if data.get("gold", 0) < cost:
+        print(f"❌ 金币不足！需要 {cost}💰")
+        pause()
+        return
+    ch = read_int(f"解锁第 {unlocked+1} 号地块（{cost}💰）？(1=是, 0=否): ", 0, 1)
+    if ch == 1:
+        data["gold"] = data.get("gold", 0) - cost
+        data["unlocked_agro_buildings"] = unlocked + 1
+        if unlocked < len(data.get("agro_buildings", [])):
+            data["agro_buildings"][unlocked]["unlocked"] = True
+        print(f"✅ 解锁农业建筑 #{unlocked+1} 号地块！")
+    pause()
 
 
 def do_upgrade_barn_menu(data):
@@ -645,14 +800,14 @@ def main_v2():
             data["_last_cycles"] = cycles
             data["season_cycles"] = data.get("season_cycles", 0) + 1
         check_factories_ready(data)
-        check_feed_factory_ready(data)
+        process_all_agro_buildings(data)
         check_baby_mature(data)
 
         header(data)
         show_barn_header(data)
         print()
         print("  [1]种植    [2]收获    [3]土地    [4]养殖场")
-        print("  [5]加工    [6]出售    [7]升级    [8]天赋")
+        print("  [5]农业建筑 [6]出售    [7]升级    [8]天赋")
         print("  [9]成就    [U]解锁   [A]自动收集 [S]保存")
         print("  [H]帮助   [X]退出")
         print()
@@ -661,11 +816,10 @@ def main_v2():
 
         if key is None:
             check_factories_ready(data)
-            check_feed_factory_ready(data)
+            process_all_agro_buildings(data)
             check_baby_mature(data)
             check_golden_pumpkin(data)
             process_barn_production(data)
-            auto_collect_barns(data)
             continue
 
         if key in (b"x", b"X"):
@@ -731,8 +885,7 @@ def main_v2():
         elif key == b"5":
             clear()
             header(data)
-            do_factories(data)
-            try_trigger_event(data, crops_game)
+            do_agro_menu(data)
             check_achievements(data)
 
         elif key == b"6":
@@ -767,7 +920,8 @@ def main_v2():
             header(data)
             show_help()
             print(f"  [A] 自动收集动物产品")
-            print(f"  [4] 进入养殖场（购买、繁殖、饲料加工等）")
+            print(f"  [4] 进入养殖场（购买、繁殖、投喂等）")
+            print(f"  [5] 农业建筑（建造饲料工厂、加工饲料）")
             pause()
 
     # end while

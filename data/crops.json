@@ -17,5 +17,5 @@
   "茶叶":    {"level": 29, "growth_minutes": 1200, "seed_price": 15000,"sell_price": 30000, "exp": 750},
   "四叶草":  {"level": 1,  "growth_minutes": 360,  "seed_price": 100,  "sell_price": 666,   "exp": 50,  "hidden": true},
   "黄金小麦":{"level": 10, "growth_minutes": 60,   "seed_price": 500,  "sell_price": 2000,  "exp": 100, "hidden": true},
-  "彩虹花":  {"level": 35, "growth_minutes": 1440, "seed_price": 10000,"sell_price": 30000, "exp": 800, "hidden": true}
+  "彩虹花":  {"level": 35, "growth_minutes": 1440, "seed_price": 10000,"sell_price": 30000, "exp": 2000, "hidden": true}
 }

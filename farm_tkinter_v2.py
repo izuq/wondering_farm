@@ -16,7 +16,7 @@ import os
 # ============ 从 farm_game_v2 导入所有逻辑（包含 barn 模块） ============
 from farm_game_v2 import (
     FACTORY_LIST, TALENTS_LIST, TALENT_GROUPS,
-    ACHIEVEMENTS_LIST, SEASONS, MAX_LANDS, WAREHOUSE_CAPACITY,
+    ACHIEVEMENTS_LIST, SEASONS, MAX_LANDS, WAREHOUSE_BASE_CAPACITY,
     REFRESH_INTERVAL, AUTO_SAVE_INTERVAL, SEASON_DURATION,
     BARN_ANIMALS_LIST, FEED_RECIPES, MAX_BARNS, INITIAL_BARNS,
     load_crops, new_save, try_level_up, get_season, season_crop_bonus,
@@ -35,6 +35,22 @@ from farm_game_v2 import (
     feed_barn_animals,
     FEED_FRUIT_NAMES,
     init_game,
+    # v2.1 新功能
+    warehouse_capacity, warehouse_expansion_cost,
+    calc_harvest_yield, cancel_event_warning,
+    reset_talents, check_talent_fruit_drop, use_talent_fruit,
+    diamond_shop_purchase, get_diamond_shop_item, DIAMOND_SHOP_ITEMS,
+    get_animal_feed_name, get_feed_consume, ANIMAL_FEED_CONSUMPTION,
+    apply_exp_bonus,
+    # 农业建筑
+    MAX_AGRO_BUILDINGS, INITIAL_AGRO_BUILDINGS, FEED_RECIPES_BY_LEVEL,
+    agro_build_cost, agro_upgrade_cost, agro_unlock_cost,
+    get_available_recipes, check_agro_ready, process_all_agro_buildings,
+    _consume_recipe_ingredients, start_agro_production, collect_agro_product,
+    build_agro_building, upgrade_agro_building, get_agro_slot_status,
+    _feed_inv,
+    # 酿酒
+    BREW_RECIPES, BREW_RECIPES_BY_LEVEL, get_recipe_list, get_recipes_by_level,
 )
 from farm import SAVE_FILE
 
@@ -454,6 +470,9 @@ class FarmGUIv2:
         self._save_pending = False
         self.current_tab = "land"  # "land" or "barn"
 
+        # F1 帮助快捷键
+        self.root.bind("<F1>", lambda e: self._show_help())
+
         # 创建界面
         self._create_top_bar()
         self._create_tab_bar()
@@ -528,7 +547,7 @@ class FarmGUIv2:
         tab_frame.pack(side="top", fill="x", padx=10, pady=(0, 2))
 
         self.tab_btns = {}
-        for tab_id, text in [("land", "🌱 土地"), ("barn", "🐔 养殖场")]:
+        for tab_id, text in [("land", "🌱 土地"), ("barn", "🐔 养殖场"), ("agro", "🏗️ 农业建筑")]:
             btn = tk.Button(tab_frame, text=text, font=F["bold"],
                            command=lambda t=tab_id: self._switch_tab(t),
                            relief="raised", bd=2, padx=15, pady=2)
@@ -551,7 +570,7 @@ class FarmGUIv2:
             btn.pack(side="right", padx=2)
 
     def _switch_tab(self, tab_id):
-        """切换土地/养殖场标签"""
+        """切换土地/养殖场/农业建筑标签"""
         self.current_tab = tab_id
         for tid, btn in self.tab_btns.items():
             btn.config(relief="sunken" if tid == tab_id else "raised",
@@ -571,8 +590,13 @@ class FarmGUIv2:
         self.barn_container = tk.Frame(self.main_frame, bg=COLORS["bg"])
         self.barn_container.pack_forget()
 
+        # 农业建筑框架（隐藏）
+        self.agro_container = tk.Frame(self.main_frame, bg=COLORS["bg"])
+        self.agro_container.pack_forget()
+
         self._build_land_ui()
         self._build_barn_ui()
+        self._build_agro_ui()
 
         # 默认显示土地
         self._switch_tab("land")
@@ -622,7 +646,7 @@ class FarmGUIv2:
             ("1", "🌱 种植", self._on_plant),
             ("3", "🌾 收获", self._on_harvest),
             ("8", "🔓 解锁土地", self._on_unlock_land),
-            ("5", "🏭 加工", self._on_factories),
+            ("5", "🏪 商店", self._on_shop),
             ("6", "📦 仓库", self._on_warehouse),
             ("9", "⭐ 天赋", self._on_talents),
             ("0", "🏆 成就", self._on_achievements),
@@ -708,9 +732,9 @@ class FarmGUIv2:
             ("buy", "🐣 购买动物", self._on_buy_barn_animal),
             ("feed", "🍽️ 投喂", self._on_feed_animals),
             ("collect", "📦 收集产出", self._on_collect_barn),
-            ("feed_factory", "🏭 饲料加工", self._on_feed_factory),
             ("breed", "🧬 繁殖", self._on_breed),
             ("warehouse", "📦 仓库", self._on_warehouse),
+            ("talent", "⭐ 天赋", self._on_talents),
             ("unlock", "🔓 解锁栏位", self._on_unlock_barn),
         ]
         self.barn_action_btns = {}
@@ -741,6 +765,692 @@ class FarmGUIv2:
         self.barn_canvas.bind("<Configure>", lambda e: self._update_barn_grid())
         self._update_barn_grid()
 
+    # ==================== 农业建筑界面 ====================
+
+    def _build_agro_ui(self):
+        """构建农业建筑界面（左侧网格 + 右侧操作栏）"""
+        # 顶部状态
+        self.agro_status_frame = tk.Frame(self.agro_container, bg=COLORS["bg"])
+        self.agro_status_frame.pack(fill="x", pady=(0, 5))
+
+        self.agro_status_labels = {}
+        for key, text in [
+            ("usage", "🏗️ 建筑: 0/2"),
+            ("processing", "⚙️ 加工中: 0"),
+            ("ready", "✅ 待收取: 0"),
+        ]:
+            lbl = tk.Label(self.agro_status_frame, text=text,
+                          font=F["normal"], bg=COLORS["bg"])
+            lbl.pack(side="left", padx=(0, 25))
+            self.agro_status_labels[key] = lbl
+
+        # 中间主区域：左侧网格 + 右侧操作栏
+        agro_main = tk.Frame(self.agro_container, bg=COLORS["bg"])
+        agro_main.pack(fill="both", expand=True)
+
+        # 左侧建筑网格
+        self.agro_grid_frame = tk.Frame(agro_main, bg=COLORS["bg"])
+        self.agro_grid_frame.pack(side="left", fill="both", expand=True)
+        self._build_agro_grid()
+
+        # 右侧操作栏（可滚动，与土地/养殖场侧边栏同宽）
+        self.agro_action_frame = tk.Frame(agro_main, bg="#f5f5f5",
+                                          width=230, relief="groove", bd=1)
+        self.agro_action_frame.pack(side="right", fill="y", padx=(10, 0))
+        self.agro_action_frame.pack_propagate(False)
+
+        tk.Label(self.agro_action_frame, text="🏗️ 建筑操作", font=F["title"],
+                 bg="#f5f5f5").pack(pady=(8, 3))
+
+        action_canvas = tk.Canvas(self.agro_action_frame, bg="#f5f5f5",
+                                  highlightthickness=0)
+        action_scrollbar = tk.Scrollbar(self.agro_action_frame, orient="vertical",
+                                        command=action_canvas.yview)
+        self.agro_action_inner = tk.Frame(action_canvas, bg="#f5f5f5")
+
+        def _on_canvas_configure(e):
+            action_canvas.itemconfig(inner_id, width=e.width)
+            action_canvas.configure(scrollregion=action_canvas.bbox("all"))
+
+        self.agro_action_inner.bind("<Configure>", lambda e: action_canvas.configure(scrollregion=action_canvas.bbox("all")))
+        action_canvas.bind("<Configure>", _on_canvas_configure)
+        inner_id = action_canvas.create_window((0, 0), window=self.agro_action_inner, anchor="nw")
+        action_canvas.configure(yscrollcommand=action_scrollbar.set)
+
+        action_canvas.pack(side="left", fill="both", expand=True)
+        action_scrollbar.pack(side="right", fill="y")
+
+        agro_actions = [
+            ("build", "🏗️ 建造工厂", self._on_build_agro),
+            ("upgrade", "⬆️ 升级建筑", self._on_upgrade_agro),
+            ("produce", "🔧 加工饲料", self._on_start_agro),
+            ("collect", "📦 收取产品", self._on_collect_agro),
+            ("unlock", "🔓 解锁地块", self._on_unlock_agro_slot),
+            ("warehouse", "📦 仓库", self._on_warehouse),
+            ("talent", "⭐ 天赋", self._on_talents),
+        ]
+        self.agro_action_btns = {}
+        for key, text, cmd in agro_actions:
+            btn = tk.Button(self.agro_action_inner, text=text, font=F["button"],
+                           command=cmd, bg=COLORS["btn_bg"],
+                           activebackground=COLORS["btn_active"],
+                           relief="raised", bd=1, height=1)
+            btn.pack(fill="x", padx=8, pady=3)
+            self.agro_action_btns[key] = btn
+
+        # 底部饲料库存
+        self.agro_feed_info_frame = tk.Frame(self.agro_container, bg="#fafafa",
+                                             height=28, relief="ridge", bd=1)
+        self.agro_feed_info_frame.pack(side="bottom", fill="x", pady=(5, 0))
+        self.agro_feed_info_frame.pack_propagate(False)
+        self.agro_feed_info_label = tk.Label(self.agro_feed_info_frame, text="🍽️ 饲料库存: 空",
+                                             font=F["small"], bg="#fafafa", anchor="w")
+        self.agro_feed_info_label.pack(fill="x", padx=10, pady=2)
+
+    def _build_agro_grid(self):
+        """创建单 Canvas 农业建筑网格"""
+        for w in self.agro_grid_frame.winfo_children():
+            w.destroy()
+        self.agro_canvas = tk.Canvas(self.agro_grid_frame, highlightthickness=0, bg=COLORS["bg"])
+        self.agro_canvas.pack(fill="both", expand=True)
+        self.agro_canvas.bind("<Button-1>", self._on_agro_click)
+        self.agro_canvas.bind("<Configure>", lambda e: self._update_agro_grid())
+        self._update_agro_grid()
+
+    def _update_agro_grid(self):
+        """在 Canvas 上绘制农业建筑网格"""
+        if not hasattr(self, 'agro_canvas') or not self.agro_canvas:
+            return
+        self.agro_canvas.delete("all")
+        d = self.data
+        unlocked = d.get("unlocked_agro_buildings", INITIAL_AGRO_BUILDINGS)
+        cw = self.agro_canvas.winfo_width() - 2
+        ch = self.agro_canvas.winfo_height() - 2
+        if cw < 50 or ch < 50:
+            return
+        cols, rows = 10, 5
+        cell_w, cell_h = cw / cols, ch / rows
+
+        for r in range(rows):
+            for c in range(cols):
+                sid = r * cols + c + 1
+                x0, y0 = c * cell_w, r * cell_h
+                x1, y1 = x0 + cell_w, y0 + cell_h
+                cx, cy_ = (x0 + x1) / 2, (y0 + y1) / 2
+
+                font_s = max(6, min(cell_w, cell_h) / 8.5)
+                ft = ("Microsoft YaHei", int(font_s))
+                ft2 = ("Microsoft YaHei", max(6, int(font_s) - 1))
+                ft3 = ("Microsoft YaHei", max(5, int(font_s) - 2))
+
+                if sid > unlocked:
+                    self.agro_canvas.create_rectangle(x0, y0, x1, y1, fill="#ddd", outline="#ccc", width=1)
+                    self.agro_canvas.create_text(cx, cy_, text=f"#{sid}\n🔒", font=ft, fill="#999", justify="center")
+                    continue
+
+                slots = d.get("agro_buildings", [])
+                if sid > len(slots):
+                    slot = {"building": None, "level": 1}
+                else:
+                    slot = slots[sid - 1]
+
+                if not slot.get("building"):
+                    bg_c, border = "#f0e6d3", "#c0b090"
+                    self.agro_canvas.create_rectangle(x0, y0, x1, y1, fill=bg_c, outline=border, width=1)
+                    # 编号靠上，空地靠下，拉开间距
+                    self.agro_canvas.create_text(cx, cy_ - cell_h * 0.15, text=f"#{sid}", font=ft2, fill="#888", anchor="n")
+                    self.agro_canvas.create_text(cx, cy_ + cell_h * 0.22, text="空地", font=ft2, fill="#999")
+                else:
+                    lv = slot.get("level", 1)
+                    btype = slot.get("building", "feed_mill")
+                    if btype == "feed_mill":
+                        name = "加工厂"
+                        idle_bg, idle_border = "#e8e8e8", "#c0c0c0"
+                    else:
+                        name = "酿酒厂"
+                        idle_bg, idle_border = "#f5e6d3", "#d4a060"
+
+                    if slot.get("order"):
+                        done = slot.get("done_batches", 0)
+                        total = slot.get("total_batches", 0)
+                        order_name = slot["order"]
+                        all_recipes = get_recipe_list(btype)
+                        if slot.get("ready"):
+                            bg_c, border = COLORS["land_ready"], "#90c090"
+                            status_text = f"✅ {done}/{total}批"
+                        else:
+                            recipe = next((r for r in all_recipes if r["name"] == order_name), None)
+                            if recipe and slot.get("start_time"):
+                                st = parse_dt(slot["start_time"])
+                                remain = recipe["time"] - (now_dt() - st).total_seconds() / 60.0
+                                if remain > 0:
+                                    m, sec = int(remain), int((remain - int(remain)) * 60)
+                                    status_text = f"{order_name} {m}:{sec:02d}"
+                                else:
+                                    status_text = f"{order_name} {done}/{total}批"
+                            else:
+                                status_text = f"{order_name} {done}/{total}批"
+                            bg_c, border = COLORS["land_growing"], "#d0c080"
+                        # 加工中只在下方显示当前订单名
+                        sub_text = order_name
+                    else:
+                        bg_c, border = idle_bg, idle_border
+                        status_text = "⬜ 空闲"
+                        sub_text = ""
+
+                    self.agro_canvas.create_rectangle(x0, y0, x1, y1, fill=bg_c, outline=border, width=1)
+                    # 顶部：编号 + 建筑名 + 等级
+                    self.agro_canvas.create_text(cx, y0 + 4, text=f"#{sid} {name} Lv.{lv}", font=ft3, fill="#333", anchor="n")
+                    # 中间：状态
+                    self.agro_canvas.create_text(cx, cy_, text=status_text, font=ft2, fill="#333")
+                    # 底部：仅在加工时显示订单名
+                    if sub_text:
+                        self.agro_canvas.create_text(cx, y1 - 4, text=sub_text, font=ft3, fill="#555", anchor="s")
+
+        # 更新状态栏
+        self._update_agro_status()
+
+    def _update_agro_status(self):
+        """更新农业建筑状态信息"""
+        d = self.data
+        unlocked = d.get("unlocked_agro_buildings", INITIAL_AGRO_BUILDINGS)
+        slots = d.get("agro_buildings", [])[:unlocked]
+        built = sum(1 for s in slots if s.get("building"))
+        processing = sum(1 for s in slots if s.get("order") and not s.get("ready"))
+        ready = sum(1 for s in slots if s.get("ready"))
+
+        if hasattr(self, 'agro_status_labels'):
+            self.agro_status_labels["usage"].config(text=f"🏗️ 建筑: {built}/{unlocked}")
+            self.agro_status_labels["processing"].config(text=f"⚙️ 加工中: {processing}")
+            self.agro_status_labels["ready"].config(text=f"✅ 待收取: {ready}")
+
+        feed_inv = d.get("inventory", {}).get("feeds", {})
+        parts = [f"{k}:{v}" for k, v in feed_inv.items() if v > 0]
+        if hasattr(self, 'agro_feed_info_label'):
+            self.agro_feed_info_label.config(text=f"🍽️ 饲料库存: {' | '.join(parts) if parts else '空'}")
+
+    def _on_agro_click(self, event):
+        """点击农业建筑网格"""
+        cw = self.agro_canvas.winfo_width()
+        ch = self.agro_canvas.winfo_height()
+        if cw < 50 or ch < 50:
+            return
+        col = int(event.x / cw * 10)
+        row = int(event.y / ch * 5)
+        sid = row * 10 + col + 1
+        d = self.data
+        unlocked = d.get("unlocked_agro_buildings", INITIAL_AGRO_BUILDINGS)
+
+        if sid > unlocked:
+            return  # 未解锁，忽略
+
+        slots = d.get("agro_buildings", [])
+        if sid > len(slots):
+            return
+        slot = slots[sid - 1]
+
+        if not slot.get("building"):
+            # 空地 → 弹出建造确认
+            self._show_build_agro_dialog(sid)
+        elif slot.get("ready"):
+            # 有完成的产品 → 弹出收取确认
+            self._show_collect_agro_dialog(sid)
+        else:
+            # 已建造 → 弹出详情对话框
+            self._show_agro_detail_dialog(sid)
+
+    # --------------------- 农业建筑弹窗 ---------------------
+
+    def _show_build_agro_dialog(self, sid):
+        """建造对话框（选择饲料加工厂或酿酒厂）"""
+        d = self.data
+        cost_feed = agro_build_cost("feed_mill")
+        cost_brew = agro_build_cost("brewery")
+        gold = d.get("gold", 0)
+
+        win = tk.Toplevel(self.root)
+        win.title(f"#{sid} 建造建筑")
+        win.geometry("350x220")
+        win.resizable(False, False)
+        win.transient(self.root)
+        win.grab_set()
+
+        tk.Label(win, text=f"在 #{sid} 号地块建造：", font=F["title"]).pack(pady=(10, 10))
+
+        btn_frame = tk.Frame(win)
+        btn_frame.pack()
+
+        can_feed = gold >= cost_feed
+        can_brew = gold >= cost_brew
+        tk.Button(btn_frame, text=f"🏭 饲料加工厂\n{cost_feed}💰",
+                 font=F["button"], bg="#d4edda" if can_feed else "#f0f0f0",
+                 command=lambda: self._do_build(sid, "feed_mill", win),
+                 width=18, height=2).pack(side="left", padx=8)
+        tk.Button(btn_frame, text=f"🍺 酿酒厂\n{cost_brew}💰",
+                 font=F["button"], bg="#f5e6d3" if can_brew else "#f0f0f0",
+                 command=lambda: self._do_build(sid, "brewery", win),
+                 width=18, height=2).pack(side="left", padx=8)
+
+        if not can_feed and not can_brew:
+            tk.Label(win, text=f"❌ 金币不足（当前 {gold:,}）", font=F["normal"], fg="red").pack(pady=5)
+
+        tk.Button(win, text="取消", font=F["button"],
+                 command=win.destroy, bg="#f0f0f0", width=10).pack(pady=10)
+        win.wait_window()
+
+    def _do_build(self, sid, building_type, dialog):
+        """执行建造"""
+        d = self.data
+        ok, msg = build_agro_building(d, sid - 1, building_type)
+        if ok:
+            self._log(f"🏗️ #{sid} {msg}")
+            write_save_v2(d)
+            dialog.destroy()
+            self._update_ui()
+        else:
+            messagebox.showwarning("建造失败", msg)
+
+    def _show_agro_detail_dialog(self, sid):
+        """建筑详情对话框（升级/加工/收取）"""
+        d = self.data
+        slot = d["agro_buildings"][sid - 1]
+        lv = slot.get("level", 1)
+        btype = slot.get("building", "feed_mill")
+        if btype == "brewery":
+            building_name = "酿酒厂"
+            emoji = "🍺"
+            action_text = "🔧 开始酿造"
+        else:
+            building_name = "饲料加工厂"
+            emoji = "🏭"
+            action_text = "🔧 开始加工"
+
+        recipes = get_available_recipes(lv, btype)
+        recipe_names = ", ".join(r["name"] for r in recipes)
+
+        win = tk.Toplevel(self.root)
+        win.title(f"#{sid} {building_name} Lv.{lv}")
+        win.geometry("420x320")
+        win.resizable(False, False)
+        win.transient(self.root)
+        win.grab_set()
+
+        tk.Label(win, text=f"{emoji} #{sid} {building_name}", font=F["title"]).pack(pady=(10, 3))
+        tk.Label(win, text=f"等级：Lv.{lv}  可加工：{recipe_names}", font=F["normal"]).pack(pady=2)
+
+        order = slot.get("order")
+        if order:
+            done = slot.get("done_batches", 0)
+            total = slot.get("total_batches", 0)
+            ready = slot.get("ready")
+            status = f"✅ 已完成" if ready else f"⏳ 加工中"
+            tk.Label(win, text=f"当前订单：{order} {done}/{total}批 {status}",
+                    font=F["normal"], fg="#b8860b").pack(pady=3)
+
+        btn_frame = tk.Frame(win)
+        btn_frame.pack(pady=10)
+
+        # 升级按钮
+        if lv < 4:
+            cost = agro_upgrade_cost(lv)
+            if cost:
+                can = "✅" if d.get("gold", 0) >= cost else "❌"
+                tk.Button(btn_frame, text=f"⬆️ 升级到 Lv.{lv+1}（{cost}💰）{can}",
+                         font=F["button"], command=lambda: self._do_upgrade_agro(sid, win),
+                         bg="#fff3cd", width=28).pack(pady=3)
+
+        # 加工按钮
+        if not order or slot.get("ready"):
+            tk.Button(btn_frame, text=action_text,
+                     font=F["button"], command=lambda: self._show_start_agro_dialog(sid, win),
+                     bg="#d4edda", width=28).pack(pady=3)
+
+        # 收取按钮
+        done = slot.get("done_batches", 0)
+        if done > 0 or slot.get("ready"):
+            tk.Button(btn_frame, text=f"📦 收取产品（{done}批已完成）",
+                     font=F["button"], command=lambda: self._do_collect_agro(sid, win),
+                     bg="#cce5ff", width=28).pack(pady=3)
+
+        tk.Button(btn_frame, text="关闭", font=F["button"],
+                 command=win.destroy, bg="#f0f0f0", width=28).pack(pady=10)
+
+        win.wait_window()
+
+    def _show_start_agro_dialog(self, sid, parent=None):
+        """开始加工对话框（含数量滑块）"""
+        d = self.data
+        slot = d["agro_buildings"][sid - 1]
+        lv = slot.get("level", 1)
+        btype = slot.get("building", "feed_mill")
+        if btype == "brewery":
+            building_name = "酿酒厂"
+            emoji = "🍺"
+        else:
+            building_name = "饲料加工厂"
+            emoji = "🏭"
+        recipes = get_available_recipes(lv, btype)
+
+        if not recipes:
+            messagebox.showwarning("加工", "没有可用的配方")
+            return
+
+        win = tk.Toplevel(parent or self.root)
+        win.title(f"#{sid} 加工")
+        win.geometry("450x380")
+        win.resizable(False, False)
+        win.transient(parent or self.root)
+        win.grab_set()
+
+        tk.Label(win, text=f"{emoji} #{sid} {building_name} Lv.{lv}", font=F["title"]).pack(pady=(8, 3))
+        tk.Label(win, text="选择配方和数量：", font=F["bold"]).pack(pady=3)
+
+        recipe_var = tk.StringVar(value=recipes[0]["name"])
+
+        recipe_frame = tk.Frame(win)
+        recipe_frame.pack(pady=5)
+        for i, recipe in enumerate(recipes):
+            inv = d["inventory"]["crops"]
+            can = True
+            ing_parts = []
+            for ing_name, ing_qty in recipe["ingredients"].items():
+                if ing_name == "任意水果":
+                    have = sum(inv.get(f, 0) for f in FEED_FRUIT_NAMES)
+                else:
+                    have = inv.get(ing_name, 0)
+                stock = f"(库存:{have})" if have > 0 else "(库存:0)"
+                ing_parts.append(f"{ing_name}×{ing_qty}{stock}")
+                if have < ing_qty:
+                    can = False
+            ing_text = ", ".join(ing_parts)
+            prefix = "✅" if can else "❌"
+            tk.Radiobutton(recipe_frame, text=f"{prefix} {recipe['name']} | {ing_text} | {recipe['time']}min/批 | 产{recipe['yield']}个",
+                          variable=recipe_var, value=recipe["name"],
+                          font=F["small"], anchor="w", justify="left",
+                          command=lambda: update_max()).pack(anchor="w", pady=1)
+
+        tk.Label(win, text="批次数量：", font=F["bold"]).pack(pady=(8, 2))
+        qty_var = tk.IntVar(value=1)
+
+        slider_frame = tk.Frame(win)
+        slider_frame.pack()
+
+        def update_max():
+            recipe = next((r for r in recipes if r["name"] == recipe_var.get()), None)
+            if recipe:
+                max_batches = 999
+                for ing_name, ing_qty in recipe["ingredients"].items():
+                    if ing_name == "任意水果":
+                        have = sum(inv.get(f, 0) for f in FEED_FRUIT_NAMES)
+                    else:
+                        have = inv.get(ing_name, 0)
+                    max_batches = min(max_batches, have // ing_qty if ing_qty > 0 else 999)
+                slider.config(to=max(max_batches, 1))
+                qty_var.set(min(qty_var.get(), max_batches))
+
+        def sub():
+            v = qty_var.get()
+            if v > 1:
+                qty_var.set(v - 1)
+
+        def add():
+            v = qty_var.get()
+            if v < int(slider.cget("to")):
+                qty_var.set(v + 1)
+
+        def sub5():
+            v = qty_var.get()
+            qty_var.set(max(1, v - 5))
+
+        def add5():
+            v = qty_var.get()
+            qty_var.set(min(int(slider.cget("to")), v + 5))
+
+        btn_row = tk.Frame(slider_frame)
+        btn_row.pack()
+        tk.Button(btn_row, text="-5", font=F["button"], width=3, command=sub5).pack(side="left", padx=2)
+        tk.Button(btn_row, text="-", font=F["button"], width=3, command=sub).pack(side="left", padx=2)
+        tk.Label(btn_row, textvariable=qty_var, font=("TkDefaultFont", 14, "bold"),
+                width=5, anchor="center").pack(side="left", padx=8)
+        tk.Button(btn_row, text="+", font=F["button"], width=3, command=add).pack(side="left", padx=2)
+        tk.Button(btn_row, text="+5", font=F["button"], width=3, command=add5).pack(side="left", padx=2)
+
+        slider = tk.Scale(win, from_=1, to=1, orient="horizontal",
+                         variable=qty_var, length=350, font=F["small"])
+        slider.pack(pady=5)
+
+        yield_label = tk.Label(win, text="", font=F["bold"])
+        yield_label.pack()
+
+        def update_yield(*_):
+            q = qty_var.get()
+            recipe = next((r for r in recipes if r["name"] == recipe_var.get()), None)
+            if recipe:
+                total = recipe["yield"] * q
+                total_time = recipe["time"] * q
+                yield_label.config(text=f"预计产出：{recipe['name']}×{total}  总耗时：{total_time}分钟（{total_time/60:.1f}h）")
+
+        qty_var.trace_add("write", update_yield)
+
+        # 首次更新
+        update_max()
+        update_yield()
+
+        def confirm():
+            qty = qty_var.get()
+            recipe_name = recipe_var.get()
+            ok, msg = start_agro_production(d, sid - 1, recipe_name, qty)
+            if ok:
+                self._log(f"🔧 #{sid} {msg}")
+                write_save_v2(d)
+                win.destroy()
+                if parent:
+                    parent.destroy()
+                self._update_ui()
+            else:
+                messagebox.showwarning("加工饲料", msg)
+
+        tk.Button(win, text="✅ 开始加工", font=F["button"],
+                 command=confirm, bg="#d4edda", width=15).pack(side="left", padx=(60, 10), pady=10)
+        tk.Button(win, text="❌ 取消", font=F["button"],
+                 command=win.destroy, bg="#f8d7da", width=15).pack(side="right", padx=(10, 60), pady=10)
+
+        win.wait_window()
+
+    def _show_collect_agro_dialog(self, sid):
+        """收取产品对话框"""
+        d = self.data
+        slot = d["agro_buildings"][sid - 1]
+        done = slot.get("done_batches", 0)
+        btype = slot.get("building", "feed_mill")
+        building_name = "酿酒厂" if btype == "brewery" else "饲料加工厂"
+
+        # 先检查一下是否刚完成
+        check_agro_ready(slot)
+        done = slot.get("done_batches", 0)
+
+        if done <= 0 and not slot.get("ready"):
+            messagebox.showinfo("收取产品", "没有可收取的产品")
+            return
+
+        all_recipes = get_recipe_list(btype)
+        recipe = next((r for r in all_recipes if r["name"] == slot["order"]), None)
+        total_yield = recipe["yield"] * done if recipe else 0
+
+        ok = messagebox.askyesno("收取产品",
+            f"#{sid} {building_name} Lv.{slot.get('level', 1)}\n"
+            f"已完成 {done} 批 {slot.get('order', '未知')}\n"
+            f"预计获得：{slot.get('order', '未知')}×{total_yield}\n\n确定收取吗？")
+        if ok:
+            self._do_collect_agro(sid, None)
+
+    def _do_collect_agro(self, sid, dialog=None):
+        """执行收取"""
+        d = self.data
+        total, msg = collect_agro_product(d, sid - 1)
+        if total > 0:
+            self._log(f"📦 #{sid} 收取 {msg}")
+            write_save_v2(d)
+            if dialog:
+                dialog.destroy()
+            self._update_ui()
+        else:
+            messagebox.showwarning("收取产品", msg)
+
+    def _do_upgrade_agro(self, sid, dialog=None):
+        """执行升级"""
+        d = self.data
+        ok, msg = upgrade_agro_building(d, sid - 1)
+        if ok:
+            self._log(f"⬆️ #{sid} {msg}")
+            write_save_v2(d)
+            if dialog:
+                dialog.destroy()
+            self._update_ui()
+        else:
+            messagebox.showwarning("升级建筑", msg)
+
+    # --------------------- 农业建筑操作按钮 ---------------------
+
+    def _on_build_agro(self):
+        """建造饲料加工厂"""
+        d = self.data
+        unlocked = d.get("unlocked_agro_buildings", INITIAL_AGRO_BUILDINGS)
+        slots = d.get("agro_buildings", [])[:unlocked]
+        # 找第一个空地
+        for i, slot in enumerate(slots):
+            if not slot.get("building"):
+                self._show_build_agro_dialog(i + 1)
+                return
+        messagebox.showinfo("建造工厂", "所有已解锁地块都有建筑了，请先解锁新地块！")
+
+    def _on_upgrade_agro(self):
+        """升级建筑 - 需要先选择建筑"""
+        d = self.data
+        unlocked = d.get("unlocked_agro_buildings", INITIAL_AGRO_BUILDINGS)
+        slots = d.get("agro_buildings", [])[:unlocked]
+        built = [(i, s) for i, s in enumerate(slots) if s.get("building") and s.get("level", 1) < 4]
+        if not built:
+            messagebox.showinfo("升级建筑", "没有可升级的建筑（所有建筑已满级或无建筑）")
+            return
+
+        # 简单选择对话框
+        win = tk.Toplevel(self.root)
+        win.title("选择要升级的建筑")
+        win.geometry("380x300")
+        win.resizable(False, False)
+        win.transient(self.root)
+        win.grab_set()
+
+        tk.Label(win, text="选择要升级的建筑：", font=F["bold"]).pack(pady=(8, 5))
+
+        for idx, slot in built:
+            lv = slot.get("level", 1)
+            cost = agro_upgrade_cost(lv)
+            can = "✅" if d.get("gold", 0) >= cost else "❌"
+            sid = idx + 1
+            btype = slot.get("building", "feed_mill")
+            bname = "酿酒厂" if btype == "brewery" else "加工厂"
+            tk.Button(win, text=f"#{sid} {bname} Lv.{lv} → Lv.{lv+1}（{cost}💰）{can}",
+                     font=F["button"], command=lambda s=sid: self._do_upgrade_agro(s, win),
+                     bg="#fff3cd", width=35, anchor="w").pack(pady=2)
+
+        tk.Button(win, text="关闭", font=F["button"],
+                 command=win.destroy, bg="#f0f0f0", width=15).pack(pady=10)
+        win.wait_window()
+
+    def _on_start_agro(self):
+        """开始加工 - 需要先选择建筑"""
+        d = self.data
+        unlocked = d.get("unlocked_agro_buildings", INITIAL_AGRO_BUILDINGS)
+        slots = d.get("agro_buildings", [])[:unlocked]
+        available = [(i, s) for i, s in enumerate(slots) if s.get("building") and
+                     (not s.get("order") or s.get("ready"))]
+        if not available:
+            messagebox.showinfo("加工饲料", "没有空闲的建筑")
+            return
+
+        if len(available) == 1:
+            self._show_start_agro_dialog(available[0][0] + 1)
+            return
+
+        # 多个可选 → 选择对话框
+        win = tk.Toplevel(self.root)
+        win.title("选择加工建筑")
+        win.geometry("400x280")
+        win.resizable(False, False)
+        win.transient(self.root)
+        win.grab_set()
+
+        tk.Label(win, text="选择要加工的建筑：", font=F["bold"]).pack(pady=(8, 5))
+
+        for idx, slot in available:
+            lv = slot.get("level", 1)
+            btype = slot.get("building", "feed_mill")
+            bname = "酿酒厂" if btype == "brewery" else "加工厂"
+            recipes = get_available_recipes(lv, btype)
+            recipe_names = ", ".join(r["name"] for r in recipes)
+            sid = idx + 1
+            tk.Button(win, text=f"#{sid} {bname} Lv.{lv} → 可加工：{recipe_names}",
+                     font=F["button"], command=lambda s=sid: self._show_start_agro_dialog(s, win),
+                     bg="#d4edda", width=40, anchor="w").pack(pady=2)
+
+        tk.Button(win, text="关闭", font=F["button"],
+                 command=win.destroy, bg="#f0f0f0", width=15).pack(pady=10)
+        win.wait_window()
+
+    def _on_collect_agro(self):
+        """收取所有已完成的饲料"""
+        d = self.data
+        unlocked = d.get("unlocked_agro_buildings", INITIAL_AGRO_BUILDINGS)
+        slots = d.get("agro_buildings", [])[:unlocked]
+        ready_slots = [(i, s) for i, s in enumerate(slots) if s.get("ready") or s.get("done_batches", 0) > 0]
+
+        if not ready_slots:
+            messagebox.showinfo("收取产品", "没有可收取的产品")
+            return
+
+        total_all = 0
+        msgs = []
+        for idx, slot in ready_slots:
+            total, msg = collect_agro_product(d, idx)
+            if total > 0:
+                total_all += total
+                msgs.append(f"#{idx+1} {msg}")
+
+        if total_all > 0:
+            self._log(f"📦 收取产品：{', '.join(msgs)}")
+            write_save_v2(d)
+            self._update_ui()
+        else:
+            messagebox.showinfo("收取产品", "没有可收取的产品")
+
+    def _on_unlock_agro_slot(self):
+        """解锁农业建筑地块"""
+        d = self.data
+        unlocked = d.get("unlocked_agro_buildings", INITIAL_AGRO_BUILDINGS)
+        if unlocked >= MAX_AGRO_BUILDINGS:
+            messagebox.showinfo("解锁地块", "所有地块已解锁！")
+            return
+
+        cost = agro_unlock_cost(unlocked + 1)
+        if d.get("gold", 0) < cost:
+            messagebox.showwarning("解锁地块", f"金币不足！需要 {cost}💰\n当前金币：{d['gold']:,}")
+            return
+
+        ok = messagebox.askyesno("解锁地块",
+            f"解锁第 {unlocked + 1} 号建筑地块\n费用：{cost}💰\n\n确定解锁吗？")
+        if ok:
+            d["gold"] = d.get("gold", 0) - cost
+            d["unlocked_agro_buildings"] = unlocked + 1
+            # 确保 slots 存在
+            slots = d.get("agro_buildings", [])
+            if unlocked < len(slots):
+                slots[unlocked]["unlocked"] = True
+            self._log(f"🔓 解锁农业建筑 #{unlocked + 1} 号地块，花费 {cost}💰")
+            write_save_v2(d)
+            self._update_ui()
+
     # ==================== 事件日志 ====================
 
     def _create_event_log(self):
@@ -768,13 +1478,16 @@ class FarmGUIv2:
 
     def _show_tab_content(self, tab_id):
         """显示指定标签内容"""
+        for c in (self.land_container, self.barn_container, self.agro_container):
+            c.pack_forget()
         if tab_id == "land":
             self.land_container.pack(fill="both", expand=True)
-            self.barn_container.pack_forget()
-        else:
-            self.land_container.pack_forget()
+        elif tab_id == "barn":
             self.barn_container.pack(fill="both", expand=True)
             self._update_barn_grid()
+        else:
+            self.agro_container.pack(fill="both", expand=True)
+            self._update_agro_grid()
 
     # ==================== 界面更新 ====================
 
@@ -808,7 +1521,7 @@ class FarmGUIv2:
             unlocked_barns = d.get("unlocked_barns", INITIAL_BARNS)
             occupied = sum(1 for b in d.get("barns", [])[:unlocked_barns] if b["animal"] is not None)
             pending = sum(b.get("pending_product", 0) for b in d.get("barns", [])[:unlocked_barns])
-            feed_total = sum(d.get("feed_inventory", {}).values())
+            feed_total = sum(d.get("inventory", {}).get("feeds", {}).values())
 
             self.status_labels["season"].config(text=f"🌸 {season}季")
             self.status_labels["land_usage"].config(text=f"🌱 {planted}/{d['unlocked_lands']}")
@@ -824,6 +1537,9 @@ class FarmGUIv2:
             self._update_barn_grid()
             self._update_barn_status()
 
+            # 农业建筑网格
+            self._update_agro_grid()
+
             # 检查工厂完成
             check_factories_ready(d)
 
@@ -836,11 +1552,10 @@ class FarmGUIv2:
             # 养殖场生产
             process_barn_production(d)
 
-            # 天赋：自动收集动物产品
-            if get_talent_level(d["talent_tree"], "auto_collect") > 0:
-                total, collected = collect_all_barns(d)
-                if total > 0:
-                    self._log(f"🤖 自动收集 {total} 件动物产品")
+            # 检查事件预警
+            pending = d.get("_pending_warning")
+            if pending:
+                self._show_event_warning(d, pending)
 
             # 随机事件 + 日志
             old_events = d.get("total_events", 0)
@@ -1045,7 +1760,7 @@ class FarmGUIv2:
         unlocked_barns = d.get("unlocked_barns", INITIAL_BARNS)
         occupied = sum(1 for b in d.get("barns", [])[:unlocked_barns] if b["animal"] is not None)
         pending = sum(b.get("pending_product", 0) for b in d.get("barns", [])[:unlocked_barns])
-        feed_inv = d.get("feed_inventory", {})
+        feed_inv = d.get("inventory", {}).get("feeds", {})
         feed_total = sum(feed_inv.values())
 
         self.barn_status_labels["usage"].config(text=f"🐔 栏位: {occupied}/{unlocked_barns}")
@@ -1278,7 +1993,7 @@ class FarmGUIv2:
                             bg=COLORS["btn_bg"])
         buy_btn.pack(pady=(0, 10))
 
-        inv = d["inventory"]["seeds"]
+        inv = d.get("seed_bag", {})
 
         def do_plant_crop(name):
             if inv.get(name, 0) <= 0:
@@ -1367,7 +2082,7 @@ class FarmGUIv2:
         scrollbar.pack(side="right", fill="y")
 
         def buy(name, price):
-            qty = self._quantity_dialog(f"购买 {name}", parent=dialog)
+            qty = self._quantity_dialog(f"购买 {name}", parent=dialog, unit_price=price, gold=d["gold"])
             if not qty:
                 return
             cost = price * qty
@@ -1375,7 +2090,7 @@ class FarmGUIv2:
                 messagebox.showwarning("金币不足", f"需要 {cost}💰，当前 {d['gold']}💰")
                 return
             d["gold"] -= cost
-            inv = d["inventory"]["seeds"]
+            inv = d.get("seed_bag", {})
             inv[name] = inv.get(name, 0) + qty
             self._log(f"🛒 购买 {name}种子×{qty}，花费 {cost}💰")
             gold_label.config(text=f"金币: {d['gold']:,}")
@@ -1398,17 +2113,17 @@ class FarmGUIv2:
 
         _rebuild_buttons()
 
-    def _quantity_dialog(self, title, min_v=1, max_v=999, parent=None):
-        """带 +/- 按钮的数量选择对话框"""
+    def _quantity_dialog(self, title, min_v=1, max_v=999, parent=None, unit_price=None, gold=None):
+        """带 +/- 按钮的数量选择对话框，传入 unit_price+gold 会显示 Max 按钮"""
         win = tk.Toplevel(parent or self.root)
         win.title(title)
-        win.geometry("340x130")
+        win.geometry("400x160")
         win.resizable(False, False)
         win.transient(parent or self.root)
         win.grab_set()
 
         result = [None]
-        tk.Label(win, text="选择数量:", font=F["bold"]).pack(pady=(12, 5))
+        tk.Label(win, text="选择数量:", font=F["bold"]).pack(pady=(8, 3))
 
         frame = tk.Frame(win)
         frame.pack()
@@ -1433,6 +2148,10 @@ class FarmGUIv2:
             v = qty_var.get()
             qty_var.set(min(max_v, v + 5))
 
+        def set_max():
+            if unit_price is not None and gold is not None and unit_price > 0:
+                qty_var.set(max(min_v, min(max_v, gold // unit_price)))
+
         tk.Button(frame, text="-5", font=F["button"], width=3,
                   command=sub5, bg="#f0f0f0").pack(side="left", padx=2)
         tk.Button(frame, text="-", font=F["button"], width=3,
@@ -1443,9 +2162,13 @@ class FarmGUIv2:
                   command=add, bg="#f0f0f0").pack(side="left", padx=2)
         tk.Button(frame, text="+5", font=F["button"], width=3,
                   command=add5, bg="#f0f0f0").pack(side="left", padx=2)
+        if unit_price is not None and gold is not None:
+            max_qty = gold // unit_price if unit_price > 0 else max_v
+            tk.Button(frame, text="Max", font=F["button"], width=3,
+                      command=set_max, bg="#cce5ff", fg="#004085").pack(side="left", padx=2)
 
         btn_frame = tk.Frame(win)
-        btn_frame.pack(pady=(10, 0))
+        btn_frame.pack(pady=(6, 0))
 
         def confirm():
             result[0] = qty_var.get()
@@ -1499,8 +2222,19 @@ class FarmGUIv2:
 
             ym = calc_yield_multiplier(land["upgrade_level"], d["talent_tree"],
                                        land["crop"], season)
-            qty = max(1, int(ym))
+            # 累积式产量（含 yield_remainder）
+            qty = calc_harvest_yield(land, 1.0, ym)
+
+            # 虫灾减产处理
+            if land.get("_pest_reduced_yield"):
+                qty = land["_pest_reduced_yield"]
+                land["_pest_reduced_yield"] = None
+
+            # 幸运四叶草 +50% 双倍概率
             dc = get_double_chance(land["upgrade_level"], d["talent_tree"])
+            if d.get("lucky_clover"):
+                dc += 0.5
+                d["lucky_clover"] = False
             if random.random() < dc:
                 qty *= 2
             if d.get("event_active", {}).get("golden_hour"):
@@ -1511,16 +2245,22 @@ class FarmGUIv2:
             total_qty += qty
             total_exp += c["exp"]
             count += 1
+            # 天赋果实掉落检查
+            if check_talent_fruit_drop(d):
+                self._log("🍎 获得稀有掉落：天赋果实！")
+
             land["crop"] = None
             land["plant_time"] = None
+            land["_wind_delay"] = 0
 
         if count == 0:
             self._log("🌾 没有可收获的作物")
         else:
-            d["exp"] += int(total_exp)
+            exp_bonus = apply_exp_bonus(d)
+            d["exp"] += int(total_exp * exp_bonus)
             d["total_harvests"] += count
             try_level_up(d)
-            self._log(f"🌾 收获 {count} 块地，获得 {total_qty} 件作物，{int(total_exp)}✨")
+            self._log(f"🌾 收获 {count} 块地，获得 {total_qty} 件作物，{int(total_exp * exp_bonus)}✨")
             if inventory_space(d) < 0:
                 self._log("⚠️ 仓库空间不足！")
         self._update_ui()
@@ -1582,7 +2322,7 @@ class FarmGUIv2:
                     text += f"生长{c['growth_minutes']}min  售{c['sell_price']}💰  {'✅' if can else '❌'}"
 
                     def buy_seed(name=n, p=price):
-                        qty = self._quantity_dialog(f"购买 {name}", parent=dialog)
+                        qty = self._quantity_dialog(f"购买 {name}", parent=dialog, unit_price=p, gold=d["gold"])
                         if not qty:
                             return
                         cost = p * qty
@@ -1590,7 +2330,7 @@ class FarmGUIv2:
                             messagebox.showwarning("金币不足", f"需要 {cost}💰")
                             return
                         d["gold"] -= cost
-                        d["inventory"]["seeds"][name] = d["inventory"]["seeds"].get(name, 0) + qty
+                        d["seed_bag"][name] = d.get("seed_bag", {}).get(name, 0) + qty
                         self._log(f"🛒 购买 {name}种子×{qty}，花费 {cost}💰")
                         _refresh_shop_gold()
                         _rebuild_seed_buttons()
@@ -1806,9 +2546,9 @@ class FarmGUIv2:
     def _calc_warehouse_value(self, d):
         """计算仓库所有库存的总售价"""
         total = 0
-        locked = d.setdefault("locked", {"crops": [], "products": [], "seeds": []})
+        locked = d.setdefault("locked", {"crops": [], "products": [], "seeds": [], "feeds": []})
         # 种子
-        for name, qty in d["inventory"].get("seeds", {}).items():
+        for name, qty in d.get("seed_bag", {}).items():
             if qty > 0 and name not in locked["seeds"]:
                 c = self.crops.get(name, {})
                 total += qty * int(c.get("seed_price", 0) * 0.5)
@@ -1831,12 +2571,17 @@ class FarmGUIv2:
                 an = next((a for a in BARN_ANIMALS_LIST if a["product"] == name), None)
                 if an:
                     total += qty * an["sell_price"]
+        # 饲料
+        feed_prices = {"基础饲料": 15, "精制饲料": 30, "高级饲料": 60, "特殊饲料": 120}
+        for name, qty in d["inventory"].get("feeds", {}).items():
+            if qty > 0 and name not in locked.get("feeds", []):
+                total += qty * feed_prices.get(name, 0)
         return total
 
     def _on_warehouse(self):
         """仓库（勾选·锁定·批量出售）"""
         d = self.data
-        d.setdefault("locked", {"crops": [], "products": [], "seeds": []})
+        d.setdefault("locked", {"crops": [], "products": [], "seeds": [], "feeds": []})
         locked = d["locked"]
 
         dialog = tk.Toplevel(self.root)
@@ -1857,7 +2602,7 @@ class FarmGUIv2:
         top.pack(fill="x", padx=10, pady=(10, 2))
         usage = inventory_usage(d)
         total_v = self._calc_warehouse_value(d)
-        tk.Label(top, text=f"📦 仓库 ({usage}/{WAREHOUSE_CAPACITY})", font=F["bold"],
+        tk.Label(top, text=f"📦 仓库 ({usage}/{warehouse_capacity(d)})", font=F["bold"],
                  bg=COLORS["bg"]).pack(side="left")
         tk.Label(top, text=f"  金币: {d['gold']:,}  ", font=F["bold"],
                  bg=COLORS["bg"]).pack(side="left")
@@ -1874,20 +2619,30 @@ class FarmGUIv2:
         def batch_sell():
             items = []
             for (cat, name), var in cb_vars.items():
-                if var.get() and d["inventory"][cat].get(name, 0) > 0:
+                if cat == "seeds":
+                    have = d.get("seed_bag", {}).get(name, 0)
+                else:
+                    have = d["inventory"][cat].get(name, 0)
+                if var.get() and have > 0:
                     items.append((cat, name))
             if not items:
                 return
             total_gold = 0
             total_qty = 0
             for cat, name in items:
-                qty = d["inventory"][cat].get(name, 0)
+                if cat == "seeds":
+                    qty = d.get("seed_bag", {}).get(name, 0)
+                else:
+                    qty = d["inventory"][cat].get(name, 0)
                 if qty <= 0:
                     continue
                 price = _get_price(cat, name)
                 total_gold += qty * price
                 total_qty += qty
-                del d["inventory"][cat][name]
+                if cat == "seeds":
+                    del d["seed_bag"][name]
+                else:
+                    del d["inventory"][cat][name]
             d["gold"] += total_gold
             d["total_earnings"] += total_gold
             self._log(f"💰 批量出售 {total_qty} 件，获得 {total_gold}💰")
@@ -1899,7 +2654,10 @@ class FarmGUIv2:
                   command=batch_sell, bg="#d4edda").pack(side="left", padx=2)
 
         def sell_all(cat, label):
-            inv = d["inventory"][cat]
+            if cat == "seeds":
+                inv = d.get("seed_bag", {})
+            else:
+                inv = d["inventory"][cat]
             locked_items = locked.get(cat, [])
             total_gold = 0
             total_qty = 0
@@ -1926,6 +2684,9 @@ class FarmGUIv2:
         tk.Button(act, text="📦 出售所有加工品", font=F["button"],
                   command=lambda: sell_all("products", "加工品"),
                   bg="#cce5ff").pack(side="left", padx=2)
+        tk.Button(act, text="🍽️ 出售所有饲料", font=F["button"],
+                  command=lambda: sell_all("feeds", "饲料"),
+                  bg="#fff3cd").pack(side="left", padx=2)
 
         # ── 滚动列表 ──
         outer = tk.Frame(dialog)
@@ -1972,6 +2733,15 @@ class FarmGUIv2:
                 if d.get("event_active", {}).get("harvest_festival"):
                     p *= 2
                 return p
+            brew = next((r for r in BREW_RECIPES if r["name"] == name), None)
+            if brew:
+                p = int(brew["sell_price"] * (1.0 + get_talent_value(d["talent_tree"], "sell_bonus")))
+                if d.get("event_active", {}).get("harvest_festival"):
+                    p *= 2
+                return p
+            feed_prices = {"基础饲料": 15, "精制饲料": 30, "高级饲料": 60, "特殊饲料": 120}
+            if name in feed_prices:
+                return feed_prices[name]
             return 0
 
         def make_item_row(cat, name, qty):
@@ -1993,7 +2763,10 @@ class FarmGUIv2:
                     total = 0
                     for (c, n), v in cb_vars.items():
                         if v.get():
-                            total += d["inventory"][c].get(n, 0)
+                            if c == "seeds":
+                                total += d.get("seed_bag", {}).get(n, 0)
+                            else:
+                                total += d["inventory"][c].get(n, 0)
                     sel_info["qty"] = total
                     update_sel_label(sel_label)
 
@@ -2037,17 +2810,22 @@ class FarmGUIv2:
             # 出售按钮（锁定或数量为0时不显示）
             if qty > 0 and not is_locked:
                 def sell_slider(c=cat, n=name, p=price):
+                    if c == "seeds":
+                        have = d.get("seed_bag", {}).get(n, 0)
+                    else:
+                        have = d["inventory"][c].get(n, 0)
                     self._sell_with_slider(
-                        f"出售{n}", c, n, p,
-                        d["inventory"][c].get(n, 0),
-                        dialog, _rebuild_list)
+                        f"出售{n}", c, n, p, have, dialog, _rebuild_list)
 
                 tk.Button(row, text="出售", font=F["small"], bg="#d4edda",
                           bd=1, command=sell_slider).pack(side="right", padx=2)
 
         def make_section(title, cat_key):
             """创建一个分类区块"""
-            inv = d["inventory"].get(cat_key, {})
+            if cat_key == "seeds":
+                inv = d.get("seed_bag", {})
+            else:
+                inv = d["inventory"].get(cat_key, {})
             items = [(n, q) for n, q in inv.items() if q > 0]
             if not items:
                 return
@@ -2071,10 +2849,11 @@ class FarmGUIv2:
             make_section("种子库存（半价回收）", "seeds")
             make_section("作物库存", "crops")
             make_section("产品库存", "products")
+            make_section("饲料库存", "feeds")
 
-            if not cb_vars and all(
+            if not cb_vars and not d.get("seed_bag", {}) and all(
                 not d["inventory"].get(cat, {})
-                for cat in ("seeds", "crops", "products")
+                for cat in ("crops", "products", "feeds")
             ):
                 tk.Label(list_frame, text="(仓库为空)", font=F["small"],
                          bg="#fafafa", fg="#999").pack(pady=20)
@@ -2174,8 +2953,8 @@ class FarmGUIv2:
         dialog.transient(self.root)
         dialog.grab_set()
 
-        tk.Label(dialog, text=f"⭐ 天赋树  天赋点: {d['talent_points']}",
-                 font=F["bold"]).pack(pady=(10, 5))
+        title_label = tk.Label(dialog, font=F["bold"])
+        title_label.pack(pady=(10, 5))
 
         frame = tk.Frame(dialog)
         frame.pack(fill="both", expand=True, padx=10)
@@ -2189,44 +2968,76 @@ class FarmGUIv2:
         canvas.pack(side="left", fill="both", expand=True)
         scrollbar.pack(side="right", fill="y")
 
-        for grp in TALENT_GROUPS:
-            tk.Label(scroll_frame, text=f"── {grp} ──", font=F["bold"],
-                     bg=COLORS["bg"]).pack(fill="x", pady=(8, 2))
-            for t in TALENTS_LIST:
-                if t[1] != grp:
-                    continue
-                _, _, name, max_lv, desc, _ = t
-                level = d["talent_tree"].get(name, 0)
-                if level >= max_lv:
-                    bar = "■" * max_lv + " MAX"
-                    btn = tk.Button(scroll_frame,
-                                    text=f"{name}  {bar}  {desc}",
-                                    font=F["small"], anchor="w", padx=5,
-                                    state="disabled", bg="#d4edda",
-                                    relief="groove", bd=1)
-                else:
-                    bar = "■" * level + "□" * (max_lv - level) + f" ({level}/{max_lv})"
-                    can = d["talent_points"] > 0
-                    btn = tk.Button(scroll_frame,
-                                    text=f"{name}  {bar}  {desc}",
-                                    font=F["small"], anchor="w", padx=5,
-                                    bg="#fff" if can else "#f0f0f0",
-                                    relief="groove", bd=1,
-                                    state="normal" if can else "disabled")
+        def _rebuild():
+            title_label.config(text=f"⭐ 天赋树  天赋点: {d['talent_points']}")
+            for w in scroll_frame.winfo_children():
+                w.destroy()
+            for grp in TALENT_GROUPS:
+                tk.Label(scroll_frame, text=f"── {grp} ──", font=F["bold"],
+                         bg=COLORS["bg"]).pack(fill="x", pady=(8, 2))
+                for t in TALENTS_LIST:
+                    if t[1] != grp:
+                        continue
+                    _, _, name, max_lv, desc, _, title = t
+                    level = d["talent_tree"].get(name, 0)
+                    if level >= max_lv:
+                        bar = "■" * max_lv + " MAX"
+                        btn = tk.Button(scroll_frame,
+                                        text=f"{title}  {bar}  {desc}",
+                                        font=F["small"], anchor="w", padx=5,
+                                        state="disabled", bg="#d4edda",
+                                        relief="groove", bd=1)
+                    else:
+                        bar = "■" * level + "□" * (max_lv - level) + f" ({level}/{max_lv})"
+                        can = d["talent_points"] > 0
+                        btn = tk.Button(scroll_frame,
+                                        text=f"{title}  {bar}  {desc}",
+                                        font=F["small"], anchor="w", padx=5,
+                                        bg="#fff" if can else "#f0f0f0",
+                                        relief="groove", bd=1,
+                                        state="normal" if can else "disabled")
 
-                    def upgrade_talent(n=name):
-                        if d["talent_points"] <= 0:
-                            messagebox.showwarning("天赋点不足", "没有足够的天赋点")
-                            return
-                        d["talent_tree"][n] = d["talent_tree"].get(n, 0) + 1
-                        d["talent_points"] -= 1
-                        self._log(f"⭐ 学习 {n} Lv.{d['talent_tree'][n]}")
-                        dialog.destroy()
-                        self._update_ui()
+                        def upgrade_talent(n=name):
+                            if d["talent_points"] <= 0:
+                                messagebox.showwarning("天赋点不足", "没有足够的天赋点")
+                                return
+                            d["talent_tree"][n] = d["talent_tree"].get(n, 0) + 1
+                            d["talent_points"] -= 1
+                            self._log(f"⭐ 学习 {title} Lv.{d['talent_tree'][n]}")
+                            _rebuild()
+                            self._update_ui()
 
-                    btn.config(command=upgrade_talent)
-                btn.pack(fill="x", padx=5, pady=2)
+                        btn.config(command=upgrade_talent)
+                    btn.pack(fill="x", padx=5, pady=2)
 
+        _rebuild()
+
+        # 底部操作栏：重置 + 天赋果实
+        bottom = tk.Frame(dialog, bg=COLORS["bg"])
+        bottom.pack(fill="x", padx=10, pady=(5, 10))
+
+        fruit_count = d.get("inventory", {}).get("crops", {}).get("天赋果实", 0)
+        fruit_used = d.get("talent_fruits_used", 0)
+        fruit_btn = tk.Button(bottom,
+            text=f"🍎 天赋果实 ({fruit_count}个,已用{fruit_used}/10)",
+            font=F["small"],
+            state="normal" if fruit_count > 0 else "disabled",
+            command=lambda: self._on_use_talent_fruit(d, dialog))
+        fruit_btn.pack(side="left", padx=5)
+
+        reset_btn_diamond = tk.Button(bottom,
+            text=f"🔄 重置天赋 (50💎)",
+            font=F["small"],
+            command=lambda: self._on_reset_talents(d, True, dialog, _rebuild))
+        reset_btn_diamond.pack(side="right", padx=5)
+
+        reset_btn_gold = tk.Button(bottom,
+            text=f"🔄 重置天赋 (5000💰)",
+            font=F["small"],
+            command=lambda: self._on_reset_talents(d, False, dialog, _rebuild))
+        reset_btn_gold.pack(side="right", padx=5)
+
+        _rebuild()
         dialog.wait_window()
 
     def _on_achievements(self):
@@ -2607,7 +3418,7 @@ class FarmGUIv2:
         # 3. 触发生产（已投喂的动物按周期产出）
         process_barn_production(d)
         self._update_barn_status()
-        self._log(f"🍽️ 投喂完成：新增投喂 {len(fed)} 只，已投喂 {len(already)} 只，缺饲料 {len(no_feed)} 只，饲料库存 {sum(d.get('feed_inventory', {}).values())} 份")
+        self._log(f"🍽️ 投喂完成：新增投喂 {len(fed)} 只，已投喂 {len(already)} 只，缺饲料 {len(no_feed)} 只，饲料库存 {sum(d.get('inventory', {}).get('feeds', {}).values())} 份")
         self._update_ui()
 
     def _on_collect_barn(self):
@@ -2634,7 +3445,7 @@ class FarmGUIv2:
         dialog.grab_set()
 
         ff = d.get("feed_factory", {})
-        feed_inv = d.get("feed_inventory", {})
+        feed_inv = d.get("inventory", {}).get("feeds", {})
 
         tk.Label(dialog, text=f"🏭 饲料加工  金币: {d['gold']:,}",
                  font=F["bold"]).pack(pady=(10, 5))
@@ -2927,7 +3738,10 @@ class FarmGUIv2:
 
         def confirm():
             qty = qty_var.get()
-            inv = self.data["inventory"][inv_category]
+            if inv_category == "seeds":
+                inv = self.data.get("seed_bag", {})
+            else:
+                inv = self.data["inventory"][inv_category]
             actual = inv.get(item_name, 0)
             qty = min(qty, actual)
             if qty <= 0:
@@ -2954,6 +3768,137 @@ class FarmGUIv2:
                   command=win.destroy, bg="#f8d7da", width=8).pack(side="left", padx=5)
 
         win.wait_window()
+
+    # ---------- 天赋重置 / 果实 ----------
+    def _on_reset_talents(self, d, pay_diamond, dialog, rebuild):
+        ok, msg = reset_talents(d, pay_diamond)
+        if ok:
+            messagebox.showinfo("天赋重置", msg)
+            self._log(f"🔄 {msg}")
+            rebuild()
+            self._update_ui()
+        else:
+            messagebox.showwarning("天赋重置", msg)
+
+    def _on_use_talent_fruit(self, d, dialog):
+        ok, msg = use_talent_fruit(d)
+        if ok:
+            messagebox.showinfo("天赋果实", msg)
+            self._log(msg)
+            dialog.destroy()
+        else:
+            messagebox.showwarning("天赋果实", msg)
+
+    # ---------- 事件预警 ----------
+    def _show_event_warning(self, d, pending):
+        event = pending.get("event", {})
+        if not event:
+            return
+        # 只弹一次，用标志位防止重复弹窗
+        if getattr(self, "_warning_shown", False):
+            return
+        self._warning_shown = True
+        result = messagebox.askyesno(
+            "⚠️ 灾害预警",
+            f"{event.get('desc', '灾害即将发生')}\n\n是否花费 500💰 取消此事件？\n选择「是」= 花费500💰取消\n选择「否」= 忽略，事件正常发生"
+        )
+        if result:
+            ok, msg = cancel_event_warning(d)
+            if ok:
+                self._log(f"🛡️ {msg}")
+            else:
+                self._log(f"⚠️ {msg}")
+        else:
+            # 忽略预警，立即触发事件
+            d["_pending_warning"] = None
+            self._log(f"⚠️ 忽略预警，事件即将发生...")
+        self._warning_shown = False
+
+    # ---------- 帮助 ----------
+    def _show_help(self):
+        dialog = tk.Toplevel(self.root)
+        dialog.title("📖 帮助")
+        dialog.geometry("550x500")
+        dialog.transient(self.root)
+        dialog.grab_set()
+
+        tk.Label(dialog, text="📖 南瓜农场 v2.1 帮助", font=F["title"]).pack(pady=(10, 5))
+
+        frame = tk.Frame(dialog)
+        frame.pack(fill="both", expand=True, padx=10, pady=5)
+
+        canvas = tk.Canvas(frame, highlightthickness=0)
+        scrollbar = tk.Scrollbar(frame, orient="vertical", command=canvas.yview)
+        scroll_frame = tk.Frame(canvas)
+        scroll_frame.bind("<Configure>", lambda e: canvas.configure(scrollregion=canvas.bbox("all")))
+        canvas.create_window((0, 0), window=scroll_frame, anchor="nw")
+        canvas.configure(yscrollcommand=scrollbar.set)
+        canvas.pack(side="left", fill="both", expand=True)
+        scrollbar.pack(side="right", fill="y")
+
+        help_text = """
+🌟 季节系统
+- 4个季节循环：春→夏→秋→冬，每季120分钟
+- 当季作物产量×1.5
+
+🌱 种植与土地
+- 初始6块地，最多50块
+- 每块土地可升级（Lv.1~10），每级增产10%
+- 升级费用随等级递增
+- 累积产量：小数部分不会损失，累积到下次收获
+
+🐔 养殖系统
+- 初始6个栏位，最多50个
+- 动物生命周期：幼年(前2次产出减半)→成年→老年(40次后减产30%)
+- 栏位升级：每级获得速度/产量/双倍等加成
+- 繁殖：选两只同种成年动物，基础75%成功率，亲本栏位≥5级各+5%
+
+🍽️ 饲料系统
+- 首次投喂后动物开始产出，每产出周期自动消耗饲料
+- 饲料不足时动物跳过产出，显示"缺料"
+- 可随时补料
+- 饲料消耗量受「节省原料」天赋影响
+- 饲料配方在饲料厂加工
+
+⭐ 天赋系统
+- 3系：种植系、经营系、养殖系
+- 升级获得天赋点
+- 天赋果实：收获时0.5%概率掉落，最多用10个
+- 重置天赋：50💎 或 5000💰
+
+💎 钻石获取
+- 成就奖励（已翻倍）
+- 流星雨事件 +5💎
+- 购买获得
+
+🏆 成就系统
+- 完成特定目标获得奖励
+- 钻石奖励已翻倍
+
+📦 仓库
+- 基础容量100，每5级+10
+- 种子独立存放，不占仓库空间
+- 可花费钻石扩容（100💎起，每次+50💎）
+- 支持锁定物品和批量出售
+
+⚠️ 随机事件
+- 正面：丰收节、黄金时段、风调雨顺、神秘商人、流星雨
+- 负面：虫灾(减产50%)、暴风(延长生长2h)，有60秒预警可500💰取消
+- 外星人：毁1-3块作物但赔偿1000💰
+
+💾 离线收益
+- 作物：已成熟自动收获一次
+- 动物：按周期累积产出（每周期消耗饲料，不足跳过）
+- 享受离线收益天赋加成
+
+快捷键
+- F1: 打开帮助
+"""
+        tk.Label(scroll_frame, text=help_text, font=F["small"],
+                 bg=COLORS["bg"], justify="left", anchor="w").pack(fill="both")
+
+        tk.Button(dialog, text="关闭", font=F["button"],
+                  command=dialog.destroy, width=10).pack(pady=(5, 10))
 
     # ---------- 关闭 ----------
     def _on_close(self):

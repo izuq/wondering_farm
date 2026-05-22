@@ -9,7 +9,7 @@
   {"name": "蜜蜂",  "level": 20, "price": 3000,  "product": "蜂蜜",   "cycle": 200,  "sell_price": 120,  "exp": 25,  "feed": {"精制饲料": 2}},
   {"name": "羊驼",  "level": 25, "price": 5000,  "product": "羊驼毛", "cycle": 240,  "sell_price": 250,  "exp": 35,  "feed": {"高级饲料": 1}},
   {"name": "马",    "level": 30, "price": 8000,  "product": "马鬃",   "cycle": 360,  "sell_price": 400,  "exp": 50,  "feed": {"高级饲料": 1}},
-  {"name": "鹿",    "level": 40, "price": 15000, "product": "鹿茸",  "cycle": 480,  "sell_price": 800,  "exp": 80,  "feed": {"特殊饲料": 1}},
-  {"name": "独角兽","level": 45, "price": 25000, "product": "独角",  "cycle": 600,  "sell_price": 1500, "exp": 120, "feed": {"特殊饲料": 1}, "hidden": true},
-  {"name": "龙",    "level": 50, "price": 50000, "product": "龙鳞",  "cycle": 720,  "sell_price": 3000, "exp": 200, "feed": {"特殊饲料": 2}, "hidden": true}
+  {"name": "鹿",    "level": 40, "price": 15000, "product": "鹿茸",  "cycle": 480,  "sell_price": 800,  "exp": 200, "feed": {"特殊饲料": 1}},
+  {"name": "独角兽","level": 45, "price": 25000, "product": "独角",  "cycle": 600,  "sell_price": 1500, "exp": 400, "feed": {"特殊饲料": 1}, "hidden": true},
+  {"name": "龙",    "level": 50, "price": 50000, "product": "龙鳞",  "cycle": 720,  "sell_price": 3000, "exp": 800, "feed": {"特殊饲料": 2}, "hidden": true}
 ]
