@@ -12,6 +12,29 @@ import random
 import threading
 from math import floor
 
+# ============ JSON 配置加载 ============
+_DATA_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "data")
+
+def _load_json(filename):
+    with open(os.path.join(_DATA_DIR, filename), "r", encoding="utf-8") as f:
+        return json.load(f)
+
+def reload_config():
+    """重新加载所有 JSON 配置（用于热更新）"""
+    global BARN_ANIMALS_LIST, FACTORY_LIST, FEED_RECIPES, TALENTS_LIST, EVENTS, ACHIEVEMENTS_LIST
+    BARN_ANIMALS_LIST = _load_json("animals.json")
+    FACTORY_LIST = _load_json("factories.json")
+    FEED_RECIPES = _load_json("feeds.json")
+    _t_raw = _load_json("talents.json")
+    TALENTS_LIST = [(t["id"], t["group"], t["name"], t["max_lv"], t["desc"], t["effect_per_lv"]) for t in _t_raw]
+    EVENTS = _load_json("events.json")
+    # 成就元数据从 JSON 加载，check_fn 由注册表提供
+    _ach_meta_dir = os.path.join(_DATA_DIR, "achievements.json")
+    _ach_meta = _load_json("achievements.json") if os.path.exists(_ach_meta_dir) else []
+    _rebuild_achievements(_ach_meta)
+
+# reload_config() 将在注册表初始化后调用
+
 # ============ 从 farm.py 导入基础逻辑 ============
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from farm import (
@@ -32,67 +55,110 @@ WAREHOUSE_CAPACITY = 100
 SEASONS = ["春", "夏", "秋", "冬"]
 SEASON_DURATION = 120  # 每季节持续时间（分钟）
 
-# ---------- 加工工厂 ----------
-FACTORY_LIST = [
-    {"factory": "磨坊", "level": 2, "product": "面粉", "ingredients": {"小麦": 3}, "sell_price": 30, "time": 3},
-    {"factory": "榨油机", "level": 3, "product": "玉米油", "ingredients": {"玉米": 3}, "sell_price": 50, "time": 5},
-    {"factory": "酿酒坊", "level": 4, "product": "米酒", "ingredients": {"水稻": 3}, "sell_price": 80, "time": 8},
-    {"factory": "花茶坊", "level": 5, "product": "花茶", "ingredients": {"玫瑰": 2}, "sell_price": 120, "time": 10},
-    {"factory": "榨汁机", "level": 6, "product": "胡萝卜汁", "ingredients": {"胡萝卜": 3}, "sell_price": 160, "time": 12},
-    {"factory": "烘焙坊", "level": 8, "product": "南瓜饼", "ingredients": {"南瓜": 2}, "sell_price": 300, "time": 20},
-]
-
-# ---------- 天赋 ----------
+# ---------- 天赋组（固定） ----------
 TALENT_GROUPS = ["种植系", "经营系", "养殖系"]
-# (id, group, name, max_lv, desc, effect_per_lv)
-TALENTS_LIST = [
-    (1, "种植系", "seed_discount", 5, "种子折扣 +3%/级", 0.03),
-    (2, "种植系", "grow_speed", 5, "加速生长 +5%/级", 0.05),
-    (3, "种植系", "double_harvest", 5, "双倍收获 +2%/级", 0.02),
-    (4, "种植系", "yield_bonus", 5, "产量加成 +5%/级", 0.05),
-    (5, "经营系", "sell_bonus", 5, "售价加成 +3%/级", 0.03),
-    (6, "经营系", "save_materials", 3, "节省原料 0.5/级", 0.5),
-    (7, "经营系", "process_speed", 5, "加工加速 +5%/级", 0.05),
-    (8, "经营系", "double_process", 5, "双倍加工 +3%/级", 0.03),
-    (9, "经营系", "offline_bonus", 5, "离线收益 +10%/级", 0.10),
-    (10, "养殖系", "animal_discount", 5, "动物折扣 +3%/级", 0.03),
-    (11, "养殖系", "animal_speed", 5, "养殖加速 +5%/级", 0.05),
-    (12, "养殖系", "animal_price", 5, "产品加成 +5%/级", 0.05),
-    (13, "养殖系", "double_animal", 5, "双倍产出 +3%/级", 0.03),
-    (14, "养殖系", "auto_collect", 1, "自动收集动物产品", 0),
-]
 
-# ---------- 成就 (name, cond_str, check_fn, reward_dict) ----------
+# ---------- 成就注册系统 ----------
+"""成就列表，格式：(name, cond_str, check_fn, reward_dict)
+由 register_achievement() 和 _rebuild_achievements() 共同构建"""
+ACHIEVEMENTS_LIST = []
+
 def _ach_check_completionist(data):
     """完美主义者：完成所有其他成就"""
     completed = set(data.get("achievements", []))
-    other_achs = [a for a in ACHIEVEMENTS_LIST if a[0] != "完美主义者"][:-1]  # 排除自身
+    other_achs = [a for a in ACHIEVEMENTS_LIST if a[0] != "完美主义者"]
     return all(a[0] in completed for a in other_achs) if other_achs else False
 
-ACHIEVEMENTS_LIST = [
-    ("初次收获", "收获 1 次作物",            lambda d: d.get("total_harvests", 0) >= 1, {"gold": 100}),
-    ("丰收达人", "收获 100 次作物",           lambda d: d.get("total_harvests", 0) >= 100, {"gold": 1000, "diamond": 5}),
-    ("种植大师", "收获 1000 次作物",          lambda d: d.get("total_harvests", 0) >= 1000, {"gold": 5000, "diamond": 20}),
-    ("第一桶金", "累计赚取 10000 金币",       lambda d: d.get("total_earnings", 0) >= 10000, {"gold": 500}),
-    ("百万富翁", "累计赚取 1000000 金币",     lambda d: d.get("total_earnings", 0) >= 1000000, {"gold": 10000, "diamond": 50}),
-    ("养殖新手", "收集 10 次动物产品",        lambda d: d.get("barn_total_collects", 0) >= 10, {"gold": 200}),
-    ("养殖大户", "收集 1000 次动物产品",      lambda d: d.get("barn_total_collects", 0) >= 1000, {"gold": 5000, "diamond": 10}),
-    ("加工能手", "加工 50 次",               lambda d: d.get("total_processed", 0) >= 50, {"gold": 1000}),
-    ("天赋异禀", "学习 10 点天赋",           lambda d: sum(d.get("talent_tree", {}).values()) >= 10, {"gold": 2000}),
-    ("土地大亨", "解锁 20 块土地",           lambda d: d.get("unlocked_lands", 0) >= 20, {"gold": 3000}),
-    ("完美主义者", "完成所有其他成就",         _ach_check_completionist, {"diamond": 100}),
-]
+def register_achievement(name, cond_str, check_fn, reward):
+    """注册一个成就"""
+    # 检查是否已存在，避免重复注册
+    for i, a in enumerate(ACHIEVEMENTS_LIST):
+        if a[0] == name:
+            ACHIEVEMENTS_LIST[i] = (name, cond_str, check_fn, reward)
+            return
+    ACHIEVEMENTS_LIST.append((name, cond_str, check_fn, reward))
 
-# ---------- 随机事件 ----------
-EVENTS = [
-    {"name": "harvest_festival", "desc": "🎉 丰收节！作物售价翻倍！", "duration": 60, "positive": True},
-    {"name": "golden_hour", "desc": "🌟 黄金时段！收获翻倍！", "duration": 30, "positive": True},
-    {"name": "rain_bless", "desc": "🌧️ 风调雨顺！生长加速！", "duration": 30, "positive": True},
-    {"name": "pest_attack", "desc": "🐛 虫灾！部分作物受损！", "duration": 0, "positive": False},
-    {"name": "wind_damage", "desc": "🌪️ 暴风！一块土地被吹毁！", "duration": 0, "positive": False},
-    {"name": "merchant_visit", "desc": "🧑‍🌾 神秘商人光临！种子8折优惠！", "duration": 5, "positive": True},
-    {"name": "alien_attack", "desc": "👽 外星人飞船降临！作物被毁但留下了1000💰赔偿！", "duration": 0, "positive": False},
-]
+def _rebuild_achievements(meta_list):
+    """根据 JSON 元数据重建成就列表（保留已注册的 check_fn）"""
+    global ACHIEVEMENTS_LIST
+    old = {a[0]: a[2] for a in ACHIEVEMENTS_LIST}  # name -> check_fn
+    new_list = []
+    for m in meta_list:
+        name = m["name"]
+        check_fn = old.get(name)  # 保留已有的 check_fn
+        new_list.append((name, m["cond_str"], check_fn, m["reward"]))
+    # 加上只在代码中注册的成就（如完美主义者）
+    for name, check_fn in old.items():
+        if name not in {m["name"] for m in meta_list}:
+            existing = next((a for a in ACHIEVEMENTS_LIST if a[0] == name), None)
+            if existing:
+                new_list.append(existing)
+    ACHIEVEMENTS_LIST = new_list
+
+# ———— 注册默认成就 ————
+register_achievement("初次收获", "收获 1 次作物",            lambda d: d.get("total_harvests", 0) >= 1, {"gold": 100})
+register_achievement("丰收达人", "收获 100 次作物",           lambda d: d.get("total_harvests", 0) >= 100, {"gold": 1000, "diamond": 5})
+register_achievement("种植大师", "收获 1000 次作物",          lambda d: d.get("total_harvests", 0) >= 1000, {"gold": 5000, "diamond": 20})
+register_achievement("第一桶金", "累计赚取 10000 金币",       lambda d: d.get("total_earnings", 0) >= 10000, {"gold": 500})
+register_achievement("百万富翁", "累计赚取 1000000 金币",     lambda d: d.get("total_earnings", 0) >= 1000000, {"gold": 10000, "diamond": 50})
+register_achievement("养殖新手", "收集 10 次动物产品",        lambda d: d.get("barn_total_collects", 0) >= 10, {"gold": 200})
+register_achievement("养殖大户", "收集 1000 次动物产品",      lambda d: d.get("barn_total_collects", 0) >= 1000, {"gold": 5000, "diamond": 10})
+register_achievement("加工能手", "加工 50 次",               lambda d: d.get("total_processed", 0) >= 50, {"gold": 1000})
+register_achievement("天赋异禀", "学习 10 点天赋",           lambda d: sum(d.get("talent_tree", {}).values()) >= 10, {"gold": 2000})
+register_achievement("土地大亨", "解锁 20 块土地",           lambda d: d.get("unlocked_lands", 0) >= 20, {"gold": 3000})
+register_achievement("完美主义者", "完成所有其他成就",        _ach_check_completionist, {"diamond": 100})
+
+# ———— 事件注册系统 ————
+"""事件效果处理器注册表"""
+EVENT_HANDLERS = {}
+
+def register_event_handler(event_name, handler_fn):
+    """注册事件效果处理器 handler_fn(data, event, crops)"""
+    EVENT_HANDLERS[event_name] = handler_fn
+
+def get_event_handler(event_name):
+    return EVENT_HANDLERS.get(event_name)
+
+def _event_pest_attack(data, event, crops):
+    lands = data.get("lands", [])
+    targets = [l for l in lands if l.get("crop")]
+    if targets:
+        t = random.choice(targets)
+        print(f"  💥 {t['crop']} 被虫灾摧毁！")
+        t["crop"] = None
+        t["plant_time"] = None
+
+def _event_wind_damage(data, event, crops):
+    lands = data.get("lands", [])
+    targets = [l for l in lands if l.get("crop")]
+    if targets:
+        t = random.choice(targets)
+        print(f"  💨 {t['crop']} 被暴风吹毁！")
+        t["crop"] = None
+        t["plant_time"] = None
+
+def _event_alien_attack(data, event, crops):
+    lands = data.get("lands", [])
+    targets = [l for l in lands if l.get("crop")]
+    if targets:
+        damaged = random.sample(targets, min(random.randint(1, 3), len(targets)))
+        for t in damaged:
+            print(f"  👽 {t['crop']} 被外星人飞船损坏！")
+            t["crop"] = None
+            t["plant_time"] = None
+    data["gold"] = data.get("gold", 0) + 1000
+    print(f"  💰 外星人留下1000💰作为赔偿！")
+
+# 前3个正面事件没有额外效果（仅标记 duration）
+# 神秘商人也没有额外效果（get_merchant_discount 检查 event_active）
+
+# ———— 注册默认事件处理器 ————
+register_event_handler("pest_attack", _event_pest_attack)
+register_event_handler("wind_damage", _event_wind_damage)
+register_event_handler("alien_attack", _event_alien_attack)
+
+# ============ 加载 JSON 配置（必须在注册表初始化后） ============
+reload_config()
 
 # ============ 核心工具函数（原在 farm.py 完整版中） ============
 
@@ -209,39 +275,14 @@ def _remove_expired_events(data):
         print(f"  ⏰ {ev} 效果已结束")
 
 def _apply_event_effect(data, event, crops):
-    """应用事件效果"""
+    """应用事件效果（通过注册表分发）"""
     data.setdefault("event_active", {})
     if event["positive"]:
         data["event_active"][event["name"]] = now_str()
     else:
-        if event["name"] == "pest_attack":
-            # 随机摧毁一些作物
-            lands = data.get("lands", [])
-            targets = [l for l in lands if l.get("crop")]
-            if targets:
-                t = random.choice(targets)
-                print(f"  💥 {t['crop']} 被虫灾摧毁！")
-                t["crop"] = None
-                t["plant_time"] = None
-        elif event["name"] == "wind_damage":
-            lands = data.get("lands", [])
-            targets = [l for l in lands if l.get("crop")]
-            if targets:
-                t = random.choice(targets)
-                print(f"  💨 {t['crop']} 被暴风吹毁！")
-                t["crop"] = None
-                t["plant_time"] = None
-        elif event["name"] == "alien_attack":
-            lands = data.get("lands", [])
-            targets = [l for l in lands if l.get("crop")]
-            if targets:
-                damaged = random.sample(targets, min(random.randint(1, 3), len(targets)))
-                for t in damaged:
-                    print(f"  👽 {t['crop']} 被外星人飞船损坏！")
-                    t["crop"] = None
-                    t["plant_time"] = None
-            data["gold"] = data.get("gold", 0) + 1000
-            print(f"  💰 外星人留下1000💰作为赔偿！")
+        handler = get_event_handler(event["name"])
+        if handler:
+            handler(data, event, crops)
 
 def try_trigger_event(data, crops):
     """尝试触发随机事件（约10%概率）
@@ -503,29 +544,10 @@ def do_unlock_land(data):
         print("❌ 条件不足")
         pause()
 
-# ============ 养殖场动物数据（10种） ============
-BARN_ANIMALS_LIST = [
-    {"name": "鸡", "level": 3,  "price": 200,  "product": "鸡蛋",   "cycle": 30,  "sell_price": 15,  "exp": 6,  "feed": {"基础饲料": 1}},
-    {"name": "鸭", "level": 5,  "price": 300,  "product": "鸭蛋",   "cycle": 45,  "sell_price": 25,  "exp": 8,  "feed": {"基础饲料": 1}},
-    {"name": "兔", "level": 8,  "price": 400,  "product": "兔毛",   "cycle": 60,  "sell_price": 35,  "exp": 10, "feed": {"基础饲料": 1}},
-    {"name": "鹅", "level": 10, "price": 500,  "product": "鹅蛋",   "cycle": 90,  "sell_price": 45,  "exp": 12, "feed": {"精制饲料": 1}},
-    {"name": "羊", "level": 12, "price": 800,  "product": "羊毛",   "cycle": 120, "sell_price": 60,  "exp": 15, "feed": {"精制饲料": 1}},
-    {"name": "猪", "level": 15, "price": 1200, "product": "猪肉",   "cycle": 150, "sell_price": 100, "exp": 20, "feed": {"精制饲料": 2}},
-    {"name": "牛", "level": 18, "price": 2000, "product": "牛奶",   "cycle": 180, "sell_price": 80,  "exp": 18, "feed": {"精制饲料": 2}},
-    {"name": "羊驼", "level": 25, "price": 5000, "product": "羊驼毛", "cycle": 240, "sell_price": 250, "exp": 35, "feed": {"高级饲料": 1}},
-    {"name": "马", "level": 30, "price": 8000, "product": "马鬃",   "cycle": 360, "sell_price": 400, "exp": 50, "feed": {"高级饲料": 1}},
-    {"name": "鹿", "level": 40, "price": 15000, "product": "鹿茸",  "cycle": 480, "sell_price": 800, "exp": 80, "feed": {"特殊饲料": 1}},
-]
-
-# ============ 饲料配方 ============
-FEED_RECIPES = [
-    {"name": "基础饲料", "ingredients": {"小麦": 2},   "time": 5,  "yield": 5, "level": 1},
-    {"name": "精制饲料", "ingredients": {"玉米": 2, "胡萝卜": 1}, "time": 10, "yield": 3, "level": 5},
-    {"name": "高级饲料", "ingredients": {"苹果": 1, "胡萝卜": 2}, "time": 15, "yield": 2, "level": 10},
-    {"name": "特殊饲料", "ingredients": {"任意水果": 3},          "time": 20, "yield": 1, "level": 15},
-]
-
+# ============ 饲料水果名（固定） ============
 FEED_FRUIT_NAMES = ["草莓", "蓝莓", "葡萄", "苹果"]
+
+# BARN_ANIMALS_LIST、FEED_RECIPES 由 data/animals.json、data/feeds.json 加载
 
 
 # ============ 存档扩展 ============

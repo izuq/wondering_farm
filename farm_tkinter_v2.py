@@ -35,6 +35,7 @@ from farm_game_v2 import (
     do_breed, can_breed, consume_feed,
     feed_barn_animals,
     FEED_FRUIT_NAMES,
+    reload_config, register_event_handler,
 )
 from farm import SAVE_FILE
 
