@@ -191,9 +191,10 @@ def get_season(data):
 
 # 季节性作物加成（丰收季节产量 x1.5）
 _SEASON_BONUS_MAP = {
-    "春": ["小麦", "水稻"],
-    "夏": ["玉米", "玫瑰"],
-    "秋": ["南瓜", "胡萝卜"],
+    "春": ["小麦", "水稻", "土豆", "四叶草"],
+    "夏": ["玉米", "玫瑰", "番茄", "蓝莓", "棉花", "甘蔗"],
+    "秋": ["南瓜", "胡萝卜", "葡萄", "可可豆", "咖啡豆"],
+    "冬": ["草莓", "茶叶", "黄金小麦", "彩虹花"],
 }
 
 def season_crop_bonus(crop_name, season):
@@ -441,8 +442,11 @@ def load_save_v2():
     inv.setdefault("crops", {})
     inv.setdefault("seeds", {})
     inv.setdefault("products", {})
+    # 兼容 MAX_LANDS 变更：补齐土地数量
+    while len(data["lands"]) < MAX_LANDS:
+        data["lands"].append({"id": len(data["lands"]) + 1, "crop": None, "plant_time": None})
     # 土地补全 upgrade_level / golden_pumpkin
-    for land in data.get("lands", []):
+    for land in data["lands"]:
         land.setdefault("upgrade_level", 1)
         land.setdefault("golden_pumpkin", False)
         land.setdefault("_maturity_roll_done", False)

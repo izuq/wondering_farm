@@ -24,7 +24,7 @@ CROPS_FILE = os.path.join(os.path.dirname(os.path.abspath(__file__)), "data", "c
 SAVE_FILE = "save.json"
 REFRESH_INTERVAL = 10      # 自动刷新间隔（秒）
 AUTO_SAVE_INTERVAL = 30    # 自动保存间隔（秒）
-MAX_LANDS = 25
+MAX_LANDS = 50
 
 # ============ 跨平台键盘输入 ============
 try:

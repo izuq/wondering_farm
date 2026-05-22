@@ -139,10 +139,120 @@ def _draw_golden_pumpkin(c, cx, cy, s=1.0):
     for ex, ey in [(cx+6*s, cy-6*s), (cx+9*s, cy-3*s), (cx-3*s, cy+5*s), (cx-7*s, cy-4*s), (cx+4*s, cy+6*s)]:
         c.create_text(ex, ey, text="✦", fill="#fff8dc", font=("Microsoft YaHei", max(7, int(6*s))))
 
+def _draw_potato(c, cx, cy, s=1.0):
+    """土豆"""
+    c.create_oval(cx-10*s, cy-8*s, cx+10*s, cy+8*s, fill="#c8a050", outline="#a08030", width=1)
+    for dx, dy in [(-4, -2), (3, -3), (-1, 2), (4, 1)]:
+        c.create_oval(cx+dx*s-2*s, cy+dy*s-2*s, cx+dx*s+2*s, cy+dy*s+2*s, fill="#b89040", outline="", width=0)
+
+def _draw_tomato(c, cx, cy, s=1.0):
+    """番茄"""
+    c.create_oval(cx-10*s, cy-8*s, cx+10*s, cy+8*s, fill="#e03030", outline="#c01010", width=1)
+    c.create_oval(cx-4*s, cy-9*s, cx+4*s, cy-5*s, fill="#3a8a2c", outline="#2a6a1c", width=1)
+    c.create_arc(cx-8*s, cy-4*s, cx-3*s, cy+2*s, start=0, extent=180, fill="#d02020", outline="", width=0)
+    c.create_oval(cx-8*s, cy-2*s, cx-5*s, cy+1*s, fill="#f0f0f0", outline="", width=0)
+
+def _draw_strawberry(c, cx, cy, s=1.0):
+    """草莓"""
+    c.create_polygon(cx, cy+8*s, cx-10*s, cy-2*s, cx+10*s, cy-2*s, fill="#e04040", outline="#c02020", width=1)
+    c.create_arc(cx-10*s, cy-6*s, cx+10*s, cy+2*s, start=0, extent=180, fill="#e04040", outline="#c02020", width=1)
+    c.create_oval(cx-3*s, cy-8*s, cx+3*s, cy-4*s, fill="#3a8a2c", outline="#2a6a1c", width=1)
+    for dx, dy in [(-4, 0), (0, 2), (4, 0), (-2, -2), (2, -2)]:
+        c.create_oval(cx+dx*s-1*s, cy+dy*s-1*s, cx+dx*s+1*s, cy+dy*s+1*s, fill="#f0c040", outline="", width=0)
+
+def _draw_blueberry(c, cx, cy, s=1.0):
+    """蓝莓"""
+    c.create_oval(cx-8*s, cy-8*s, cx+8*s, cy+8*s, fill="#4060d0", outline="#3040b0", width=1)
+    c.create_oval(cx-5*s, cy-4*s, cx-2*s, cy-1*s, fill="#d0e0ff", outline="", width=0)
+    c.create_oval(cx+1*s, cy-3*s, cx+3*s, cy-1*s, fill="#d0e0ff", outline="", width=0)
+    c.create_polygon(cx-3*s, cy-9*s, cx, cy-12*s, cx+3*s, cy-9*s, fill="#5a3a1c", outline="#3a2a0c", width=1)
+
+def _draw_coffee(c, cx, cy, s=1.0):
+    """咖啡豆"""
+    c.create_line(cx, cy+10*s, cx, cy-6*s, fill="#5a3a1c", width=max(1, int(2*s)))
+    for dx, dy in [(-4, -2), (4, -2), (-3, 3), (3, 3)]:
+        c.create_oval(cx+dx*s-4*s, cy+dy*s-3*s, cx+dx*s+4*s, cy+dy*s+3*s, fill="#6a4a2c", outline="#4a2a0c", width=1)
+        c.create_line(cx+dx*s-2*s, cy+dy*s-3*s, cx+dx*s+2*s, cy+dy*s-6*s, fill="#6a4a2c", width=1)
+
+def _draw_cotton(c, cx, cy, s=1.0):
+    """棉花"""
+    c.create_line(cx, cy+12*s, cx, cy-2*s, fill="#4a7a2c", width=max(1, int(2*s)))
+    c.create_line(cx, cy+4*s, cx-6*s, cy+6*s, fill="#5a8a3c", width=1)
+    c.create_line(cx, cy+2*s, cx+6*s, cy+4*s, fill="#5a8a3c", width=1)
+    for dx, dy in [(0, -4), (-5, 0), (5, 0), (-3, 2), (3, 2)]:
+        c.create_oval(cx+dx*s-6*s, cy+dy*s-4*s, cx+dx*s+6*s, cy+dy*s+4*s, fill="#f8f8f8", outline="#e0e0e0", width=1)
+
+def _draw_sugarcane(c, cx, cy, s=1.0):
+    """甘蔗"""
+    c.create_line(cx, cy+12*s, cx, cy-12*s, fill="#7a3a1c", width=max(3, int(5*s)))
+    for i in range(4):
+        cy_seg = cy + 12*s - i*6*s
+        c.create_line(cx-5*s, cy_seg, cx+5*s, cy_seg, fill="#5a2a0c", width=1)
+    c.create_line(cx-2*s, cy-12*s, cx+6*s, cy-16*s, fill="#3a8a2c", width=max(1, int(2*s)))
+    c.create_line(cx+2*s, cy-12*s, cx+8*s, cy-14*s, fill="#3a8a2c", width=max(1, int(2*s)))
+
+def _draw_grape(c, cx, cy, s=1.0):
+    """葡萄"""
+    c.create_line(cx, cy+8*s, cx-2*s, cy-12*s, fill="#5a3a1c", width=max(1, int(2*s)))
+    c.create_line(cx-2*s, cy-12*s, cx+6*s, cy-16*s, fill="#3a8a2c", width=1)
+    colors = ["#6040a0", "#7050b0", "#503090"]
+    for dx, dy in [(0, -2), (-5, 1), (5, 1), (-3, 4), (3, 4), (0, 6)]:
+        c.create_oval(cx+dx*s-4*s, cy+dy*s-3*s, cx+dx*s+4*s, cy+dy*s+3*s, fill=colors[(dx+dy)%3], outline="#402080", width=1)
+
+def _draw_cocoa(c, cx, cy, s=1.0):
+    """可可豆"""
+    c.create_line(cx, cy+10*s, cx, cy-8*s, fill="#5a3a1c", width=max(2, int(3*s)))
+    c.create_oval(cx-7*s, cy-6*s, cx+7*s, cy+6*s, fill="#8B5a3c", outline="#6a3a1c", width=1)
+    for dx in [-3, 0, 3]:
+        c.create_line(cx+dx*s, cy-4*s, cx+dx*s, cy+4*s, fill="#6a3a1c", width=1)
+    c.create_oval(cx-5*s, cy-2*s, cx-2*s, cy, fill="#c08040", outline="", width=0)
+
+def _draw_tea(c, cx, cy, s=1.0):
+    """茶叶"""
+    c.create_line(cx, cy+12*s, cx, cy-2*s, fill="#4a6a2c", width=max(1, int(2*s)))
+    for dx, dy in [(-5, -4), (5, -6), (-3, 2), (3, 0)]:
+        c.create_polygon(
+            cx+dx*s-5*s, cy+dy*s+3*s,
+            cx+dx*s, cy+dy*s-5*s,
+            cx+dx*s+5*s, cy+dy*s+3*s,
+            fill="#5a8a3c", outline="#3a6a1c", width=1)
+    c.create_oval(cx-2*s, cy-4*s, cx+2*s, cy+2*s, fill="#8a5a3c", outline="", width=0)
+
+def _draw_clover(c, cx, cy, s=1.0):
+    """四叶草"""
+    c.create_line(cx, cy+10*s, cx, cy-2*s, fill="#3a6a1c", width=max(1, int(2*s)))
+    for dx, dy in [(-4, -4), (4, -4), (-4, 2), (4, 2)]:
+        c.create_oval(cx+dx*s-5*s, cy+dy*s-4*s, cx+dx*s+5*s, cy+dy*s+4*s, fill="#4a8a2c", outline="#3a6a1c", width=1)
+    c.create_oval(cx-1*s, cy-1*s, cx+1*s, cy+1*s, fill="#6aaa3c", outline="", width=0)
+
+def _draw_golden_wheat(c, cx, cy, s=1.0):
+    """黄金小麦"""
+    c.create_line(cx, cy+12*s, cx, cy-8*s, fill="#b8860b", width=max(1, int(2*s)))
+    c.create_line(cx, cy+4*s, cx-8*s, cy+8*s, fill="#d4a017", width=max(1, int(1.5*s)))
+    c.create_line(cx, cy+2*s, cx+8*s, cy+6*s, fill="#d4a017", width=max(1, int(1.5*s)))
+    for i, ox in enumerate([-4, 0, 4]):
+        oy = -8 - i*5
+        c.create_oval(cx+ox*s-3*s, cy+oy*s-3*s, cx+ox*s+3*s, cy+oy*s+2*s, fill="#ffd700", outline="#b8860b", width=1)
+        c.create_line(cx+ox*s, cy+oy*s-3*s, cx+ox*s, cy+oy*s-8*s, fill="#ffd700", width=1)
+
+def _draw_rainbow_flower(c, cx, cy, s=1.0):
+    """彩虹花"""
+    c.create_line(cx, cy+10*s, cx, cy-2*s, fill="#3a6a1c", width=max(1, int(2*s)))
+    c.create_line(cx-4*s, cy+4*s, cx-6*s, cy+2*s, fill="#3a6a1c", width=1)
+    c.create_line(cx+4*s, cy+2*s, cx+6*s, cy, fill="#3a6a1c", width=1)
+    rainbow = ["#ff0000", "#ff8800", "#ffff00", "#00cc00", "#0088ff", "#8800ff"]
+    for i, (dx, dy) in enumerate([(0, -2), (-4, -4), (4, -4), (-2, -6), (2, -6), (0, -8)]):
+        c.create_oval(cx+dx*s-4*s, cy+dy*s-3*s, cx+dx*s+4*s, cy+dy*s+3*s, fill=rainbow[i], outline="", width=0)
+
 CROP_DRAW_FUNCS = {
     "小麦": _draw_wheat, "玉米": _draw_corn, "水稻": _draw_rice,
     "玫瑰": _draw_rose, "胡萝卜": _draw_carrot, "南瓜": _draw_pumpkin,
     "金色南瓜": _draw_golden_pumpkin,
+    "土豆": _draw_potato, "番茄": _draw_tomato, "草莓": _draw_strawberry,
+    "蓝莓": _draw_blueberry, "咖啡豆": _draw_coffee, "棉花": _draw_cotton,
+    "甘蔗": _draw_sugarcane, "葡萄": _draw_grape, "可可豆": _draw_cocoa,
+    "茶叶": _draw_tea, "四叶草": _draw_clover,
+    "黄金小麦": _draw_golden_wheat, "彩虹花": _draw_rainbow_flower,
 }
 
 
@@ -254,10 +364,49 @@ def _draw_deer(c, cx, cy, s=1.0):
     for dx in [-6, -2, 2, 6]:
         c.create_line(cx+dx*s, cy+8*s, cx+dx*s, cy+13*s, fill="#8B7355", width=max(1, int(2*s)))
 
+def _draw_bee(c, cx, cy, s=1.0):
+    """蜜蜂"""
+    c.create_oval(cx-9*s, cy-3*s, cx+9*s, cy+7*s, fill="#f0c040", outline="#d0a020", width=1)
+    for dx in [-5, 0, 5]:
+        c.create_line(cx+dx*s, cy-3*s, cx+dx*s, cy+7*s, fill="#333", width=max(1, int(2*s)))
+    c.create_oval(cx-4*s, cy-9*s, cx+4*s, cy-3*s, fill="#f0e060", outline="#d0a020", width=1)
+    c.create_oval(cx-1*s, cy-7*s, cx+2*s, cy-4*s, fill="#333", outline="", width=0)
+    c.create_oval(cx-10*s, cy-8*s, cx-2*s, cy-2*s, fill="#e0e8ff", outline="#c0d0f0", width=1)
+    c.create_oval(cx+2*s, cy-8*s, cx+10*s, cy-2*s, fill="#e0e8ff", outline="#c0d0f0", width=1)
+
+def _draw_unicorn(c, cx, cy, s=1.0):
+    """独角兽"""
+    c.create_oval(cx-10*s, cy-4*s, cx+10*s, cy+8*s, fill="#f0f0f8", outline="#d0d0e0", width=1)
+    c.create_polygon(cx+4*s, cy-4*s, cx+8*s, cy-14*s, cx+12*s, cy-14*s, cx+10*s, cy-4*s,
+                     fill="#f0f0f8", outline="#d0d0e0", width=1)
+    c.create_oval(cx+6*s, cy-16*s, cx+14*s, cy-8*s, fill="#f0f0f8", outline="#d0d0e0", width=1)
+    c.create_polygon(cx+8*s, cy-16*s, cx+10*s, cy-26*s, cx+12*s, cy-16*s, fill="#ffd700", outline="#b8860b", width=1)
+    c.create_oval(cx+10*s, cy-14*s, cx+12*s, cy-12*s, fill="#88ccff", outline="", width=0)
+    c.create_line(cx+6*s, cy-14*s, cx+2*s, cy-10*s, cx+4*s, cy-4*s, fill="#e0e0e8", width=max(1, int(2*s)), smooth=True)
+    c.create_line(cx-10*s, cy+2*s, cx-16*s, cy-2*s, fill="#e0e0e8", width=max(1, int(2*s)))
+    c.create_oval(cx-12*s, cy-4*s, cx-8*s, cy, fill="#e0c0ff", outline="", width=0)
+    for dx in [-6, -2, 2, 6]:
+        c.create_line(cx+dx*s, cy+8*s, cx+dx*s, cy+13*s, fill="#e0e0e8", width=max(1, int(2*s)))
+
+def _draw_dragon(c, cx, cy, s=1.0):
+    """龙"""
+    c.create_oval(cx-12*s, cy-6*s, cx+8*s, cy+8*s, fill="#30a030", outline="#208020", width=1)
+    c.create_polygon(cx+6*s, cy-4*s, cx+14*s, cy-4*s, cx+12*s, cy+2*s, cx+8*s, cy,
+                     fill="#30a030", outline="#208020", width=1)
+    c.create_oval(cx+10*s, cy-6*s, cx+14*s, cy-2*s, fill="#30a030", outline="#208020", width=1)
+    c.create_oval(cx+11*s, cy-5*s, cx+13*s, cy-3*s, fill="#ff0", outline="", width=0)
+    for dx in [-8, -4, 0, 4]:
+        c.create_polygon(cx+dx*s, cy-6*s, cx+dx*s+2*s, cy-12*s, cx+dx*s+4*s, cy-6*s, fill="#e04040", outline="#c02020", width=1)
+    c.create_polygon(cx-6*s, cy-4*s, cx-16*s, cy-14*s, cx-10*s, cy-2*s, fill="#60c060", outline="#40a040", width=1)
+    c.create_polygon(cx-10*s, cy-2*s, cx-18*s, cy-8*s, cx-12*s, cy, fill="#50b050", outline="#40a040", width=1)
+    for dx in [-6, -2, 2, 6]:
+        c.create_line(cx+dx*s, cy+8*s, cx+dx*s, cy+13*s, fill="#208020", width=max(1, int(2*s)))
+
 ANIMAL_DRAW_FUNCS = {
     "鸡": _draw_chicken, "鸭": _draw_duck, "兔": _draw_rabbit, "鹅": _draw_goose,
     "羊": _draw_sheep, "猪": _draw_pig, "牛": _draw_cow,
     "羊驼": _draw_alpaca, "马": _draw_horse, "鹿": _draw_deer,
+    "蜜蜂": _draw_bee, "独角兽": _draw_unicorn, "龙": _draw_dragon,
 }
 
 
@@ -1074,7 +1223,7 @@ class FarmGUIv2:
     def _show_plant_dialog(self, lid=None):
         """种植对话框"""
         d = self.data
-        avail = [(n, c) for n, c in self.crops.items() if d["level"] >= c["level"]]
+        avail = [(n, c) for n, c in self.crops.items() if d["level"] >= c["level"] and not c.get("hidden")]
         if not avail:
             messagebox.showinfo("提示", f"等级 {d['level']} 无法种植任何作物")
             return
@@ -1171,7 +1320,7 @@ class FarmGUIv2:
     def _show_buy_seeds_dialog(self, parent):
         """购买种子对话框"""
         d = self.data
-        avail = [(n, c) for n, c in self.crops.items() if d["level"] >= c["level"]]
+        avail = [(n, c) for n, c in self.crops.items() if d["level"] >= c["level"] and not c.get("hidden")]
         if not avail:
             messagebox.showinfo("提示", "没有可购买的种子")
             return
@@ -1182,7 +1331,8 @@ class FarmGUIv2:
         dialog.transient(parent)
         dialog.grab_set()
 
-        tk.Label(dialog, text=f"金币: {d['gold']:,}", font=F["bold"]).pack(pady=10)
+        gold_label = tk.Label(dialog, text=f"金币: {d['gold']:,}", font=F["bold"])
+        gold_label.pack(pady=10)
 
         frame = tk.Frame(dialog)
         frame.pack(fill="both", expand=True, padx=10)
@@ -1208,19 +1358,25 @@ class FarmGUIv2:
             inv = d["inventory"]["seeds"]
             inv[name] = inv.get(name, 0) + qty
             self._log(f"🛒 购买 {name}种子×{qty}，花费 {cost}💰")
-            dialog.destroy()
+            gold_label.config(text=f"金币: {d['gold']:,}")
+            _rebuild_buttons()
 
-        for i, (n, c) in enumerate(avail, 1):
-            discount = get_talent_value(d["talent_tree"], "seed_discount")
-            price = int(c["seed_price"] * (1.0 - discount))
-            can = d["gold"] >= price
-            text = f"{i}. {n}  {price}💰 (原{c['seed_price']})  {'✅' if can else '❌'}"
-            btn = tk.Button(scroll_frame, text=text, font=F["small"],
-                            anchor="w", padx=5,
-                            command=lambda x=n, p=price: buy(x, p),
-                            bg="#fff", relief="groove", bd=1,
-                            state="normal" if can else "disabled")
-            btn.pack(fill="x", padx=5, pady=2)
+        def _rebuild_buttons():
+            for child in scroll_frame.winfo_children():
+                child.destroy()
+            for i, (n, c) in enumerate(avail, 1):
+                discount = get_talent_value(d["talent_tree"], "seed_discount")
+                price = int(c["seed_price"] * (1.0 - discount))
+                can = d["gold"] >= price
+                text = f"{i}. {n}  {price}💰 (原{c['seed_price']})  {'✅' if can else '❌'}"
+                btn = tk.Button(scroll_frame, text=text, font=F["small"],
+                                anchor="w", padx=5,
+                                command=lambda x=n, p=price: buy(x, p),
+                                bg="#fff", relief="groove", bd=1,
+                                state="normal" if can else "disabled")
+                btn.pack(fill="x", padx=5, pady=2)
+
+        _rebuild_buttons()
 
     def _quantity_dialog(self, title, min_v=1, max_v=999, parent=None):
         """带 +/- 按钮的数量选择对话框"""
@@ -1361,6 +1517,12 @@ class FarmGUIv2:
         tk.Label(dialog, text=f"🏪 商店  金币: {d['gold']:,}  等级: {d['level']}",
                  font=F["bold"]).pack(pady=(10, 5))
 
+        def _refresh_shop_gold():
+            for w in dialog.winfo_children():
+                if isinstance(w, tk.Label) and "🏪 商店" in w.cget("text"):
+                    w.config(text=f"🏪 商店  金币: {d['gold']:,}  等级: {d['level']}")
+                    break
+
         notebook = ttk.Notebook(dialog)
         notebook.pack(fill="both", expand=True, padx=10, pady=5)
 
@@ -1384,42 +1546,47 @@ class FarmGUIv2:
         seed_canvas.pack(side="left", fill="both", expand=True)
         seed_scroll.pack(side="right", fill="y")
 
-        for i, (n, c) in enumerate(self.crops.items(), 1):
-            unlocked = d["level"] >= c["level"]
-            if unlocked:
-                discount = get_talent_value(d["talent_tree"], "seed_discount") + merchant_disc
-                price = int(c["seed_price"] * (1.0 - discount))
-                can = d["gold"] >= price
-                disc_tag = "🔥" if merchant_disc > 0 else ""
-                text = f"{disc_tag}{i}. {n}  {price}💰(原{c['seed_price']})  Lv.{c['level']}  "
-                text += f"生长{c['growth_minutes']}min  售{c['sell_price']}💰  {'✅' if can else '❌'}"
+        def _rebuild_seed_buttons():
+            for w in seed_inner.winfo_children():
+                w.destroy()
+            for i, (n, c) in enumerate(self.crops.items(), 1):
+                if c.get("hidden"):
+                    continue
+                unlocked = d["level"] >= c["level"]
+                if unlocked:
+                    discount = get_talent_value(d["talent_tree"], "seed_discount") + merchant_disc
+                    price = int(c["seed_price"] * (1.0 - discount))
+                    can = d["gold"] >= price
+                    disc_tag = "🔥" if merchant_disc > 0 else ""
+                    text = f"{disc_tag}{i}. {n}  {price}💰(原{c['seed_price']})  Lv.{c['level']}  "
+                    text += f"生长{c['growth_minutes']}min  售{c['sell_price']}💰  {'✅' if can else '❌'}"
 
-                def buy_seed(name=n, p=price):
-                    qty = self._quantity_dialog(f"购买 {name}", parent=dialog)
-                    if not qty:
-                        return
-                    cost = p * qty
-                    if d["gold"] < cost:
-                        messagebox.showwarning("金币不足", f"需要 {cost}💰")
-                        return
-                    d["gold"] -= cost
-                    d["inventory"]["seeds"][name] = d["inventory"]["seeds"].get(name, 0) + qty
-                    self._log(f"🛒 购买 {name}种子×{qty}，花费 {cost}💰")
-                    dialog.destroy()
-                    self._update_ui()
+                    def buy_seed(name=n, p=price):
+                        qty = self._quantity_dialog(f"购买 {name}", parent=dialog)
+                        if not qty:
+                            return
+                        cost = p * qty
+                        if d["gold"] < cost:
+                            messagebox.showwarning("金币不足", f"需要 {cost}💰")
+                            return
+                        d["gold"] -= cost
+                        d["inventory"]["seeds"][name] = d["inventory"]["seeds"].get(name, 0) + qty
+                        self._log(f"🛒 购买 {name}种子×{qty}，花费 {cost}💰")
+                        _refresh_shop_gold()
+                        _rebuild_seed_buttons()
 
-                btn = tk.Button(seed_inner, text=text, font=F["small"],
-                                anchor="w", padx=5,
-                                command=buy_seed if can else None,
-                                bg="#fff" if can else "#eee",
-                                state="normal" if can else "disabled",
-                                relief="groove", bd=1)
-            else:
-                text = f"🔒 {i}. {n}  需Lv.{c['level']}  生长{c['growth_minutes']}min  售{c['sell_price']}💰"
-                btn = tk.Button(seed_inner, text=text, font=F["small"],
-                                anchor="w", padx=5, state="disabled",
-                                bg="#f0f0f0", relief="groove", bd=1)
-            btn.pack(fill="x", padx=5, pady=2)
+                    btn = tk.Button(seed_inner, text=text, font=F["small"],
+                                    anchor="w", padx=5,
+                                    command=buy_seed if can else None,
+                                    bg="#fff" if can else "#eee",
+                                    state="normal" if can else "disabled",
+                                    relief="groove", bd=1)
+                else:
+                    text = f"🔒 {i}. {n}  需Lv.{c['level']}  生长{c['growth_minutes']}min  售{c['sell_price']}💰"
+                    btn = tk.Button(seed_inner, text=text, font=F["small"],
+                                    anchor="w", padx=5, state="disabled",
+                                    bg="#f0f0f0", relief="groove", bd=1)
+                btn.pack(fill="x", padx=5, pady=2)
 
         # ---- 动物标签页 ----
         animal_frame = tk.Frame(notebook, bg=COLORS["bg"])
@@ -1434,61 +1601,68 @@ class FarmGUIv2:
         animal_canvas.pack(side="left", fill="both", expand=True)
         animal_scroll.pack(side="right", fill="y")
 
-        for i, a in enumerate(BARN_ANIMALS_LIST, 1):
-            unlocked = d["level"] >= a["level"]
-            discount = 1.0 - get_talent_value(d["talent_tree"], "animal_discount")
-            price = int(a["price"] * discount)
-            can = unlocked and d["gold"] >= price
-            feed_desc = "+".join(f"{k}×{v}" for k, v in a["feed"].items())
-            if not unlocked:
-                text = f"🔒 {i}. {a['name']}  需Lv.{a['level']}  {a['price']}💰  →{a['product']}({a['sell_price']}💰)"
-                btn = tk.Button(animal_inner, text=text, font=F["small"],
-                                anchor="w", padx=5, state="disabled",
-                                bg="#eee", relief="groove", bd=1)
-            else:
-                text = f"{i}. {a['name']}  {price}💰(原{a['price']})  →{a['product']}({a['sell_price']}💰)"
-                text += f"  饲料:{feed_desc}  {'✅' if can else '❌'}"
+        def _rebuild_animal_buttons():
+            for w in animal_inner.winfo_children():
+                w.destroy()
+            for i, a in enumerate(BARN_ANIMALS_LIST, 1):
+                if a.get("hidden"):
+                    continue
+                unlocked = d["level"] >= a["level"]
+                discount = 1.0 - get_talent_value(d["talent_tree"], "animal_discount")
+                price = int(a["price"] * discount)
+                can = unlocked and d["gold"] >= price
+                feed_desc = "+".join(f"{k}×{v}" for k, v in a["feed"].items())
+                if not unlocked:
+                    text = f"🔒 {i}. {a['name']}  需Lv.{a['level']}  {a['price']}💰  →{a['product']}({a['sell_price']}💰)"
+                    btn = tk.Button(animal_inner, text=text, font=F["small"],
+                                    anchor="w", padx=5, state="disabled",
+                                    bg="#eee", relief="groove", bd=1)
+                else:
+                    text = f"{i}. {a['name']}  {price}💰(原{a['price']})  →{a['product']}({a['sell_price']}💰)"
+                    text += f"  饲料:{feed_desc}  {'✅' if can else '❌'}"
 
-                def buy_animal(name=a["name"]):
-                    # 找空闲栏位
-                    ub = d.get("unlocked_barns", INITIAL_BARNS)
-                    free_idx = None
-                    for bi, barn in enumerate(d["barns"][:ub]):
-                        if barn["animal"] is None and barn.get("unlocked", False):
-                            free_idx = bi
-                            break
-                    if free_idx is None:
-                        messagebox.showwarning("无空栏位", "没有空闲的养殖栏位！")
-                        return
-                    ad = get_barn_animal(name)
-                    if ad is None:
-                        return
-                    discount2 = 1.0 - get_talent_value(d["talent_tree"], "animal_discount")
-                    cost = int(ad["price"] * discount2)
-                    if d["gold"] < cost:
-                        messagebox.showwarning("金币不足", f"需要 {cost}💰")
-                        return
-                    d["gold"] -= cost
-                    barn = d["barns"][free_idx]
-                    barn["animal"] = name
-                    barn["animal_type"] = name
-                    barn["purchase_time"] = now_str()
-                    barn["age_stage"] = "juvenile"
-                    barn["production_count"] = 0
-                    barn["last_produce_time"] = None
-                    barn["pending_product"] = 0
-                    barn["breed_cooldown"] = None
-                    self._log(f"✅ 在栏位 {free_idx+1} 放入 {name}，花费 {cost}💰")
-                    dialog.destroy()
-                    self._update_ui()
+                    def buy_animal(name=a["name"]):
+                        ub = d.get("unlocked_barns", INITIAL_BARNS)
+                        free_idx = None
+                        for bi, barn in enumerate(d["barns"][:ub]):
+                            if barn["animal"] is None and barn.get("unlocked", False):
+                                free_idx = bi
+                                break
+                        if free_idx is None:
+                            messagebox.showwarning("无空栏位", "没有空闲的养殖栏位！")
+                            return
+                        ad = get_barn_animal(name)
+                        if ad is None:
+                            return
+                        discount2 = 1.0 - get_talent_value(d["talent_tree"], "animal_discount")
+                        cost = int(ad["price"] * discount2)
+                        if d["gold"] < cost:
+                            messagebox.showwarning("金币不足", f"需要 {cost}💰")
+                            return
+                        d["gold"] -= cost
+                        barn = d["barns"][free_idx]
+                        barn["animal"] = name
+                        barn["animal_type"] = name
+                        barn["purchase_time"] = now_str()
+                        barn["age_stage"] = "juvenile"
+                        barn["production_count"] = 0
+                        barn["last_produce_time"] = None
+                        barn["pending_product"] = 0
+                        barn["breed_cooldown"] = None
+                        self._log(f"✅ 在栏位 {free_idx+1} 放入 {name}，花费 {cost}💰")
+                        _refresh_shop_gold()
+                        _rebuild_animal_buttons()
 
-                btn = tk.Button(animal_inner, text=text, font=F["small"],
-                                anchor="w", padx=5,
-                                command=buy_animal if can else None,
-                                bg="#fff" if can else "#f0f0f0",
-                                state="normal" if can else "disabled",
-                                relief="groove", bd=1)
-            btn.pack(fill="x", padx=5, pady=2)
+                    btn = tk.Button(animal_inner, text=text, font=F["small"],
+                                    anchor="w", padx=5,
+                                    command=buy_animal if can else None,
+                                    bg="#fff" if can else "#f0f0f0",
+                                    state="normal" if can else "disabled",
+                                    relief="groove", bd=1)
+                btn.pack(fill="x", padx=5, pady=2)
+
+        _rebuild_seed_buttons()
+        _rebuild_animal_buttons()
 
         dialog.wait_window()
 
@@ -2242,7 +2416,8 @@ class FarmGUIv2:
         canvas.pack(side="left", fill="both", expand=True)
         scrollbar.pack(side="right", fill="y")
 
-        for i, a_data in enumerate(BARN_ANIMALS_LIST, 1):
+        visible_animals = [a for a in BARN_ANIMALS_LIST if not a.get("hidden")]
+        for i, a_data in enumerate(visible_animals, 1):
             unlocked = d["level"] >= a_data["level"]
             discount = 1.0 - get_talent_value(d["talent_tree"], "animal_discount")
             price = int(a_data["price"] * discount)
