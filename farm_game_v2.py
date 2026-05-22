@@ -629,6 +629,7 @@ def load_save_v2():
     for land in data.get("lands", []):
         land.setdefault("upgrade_level", 1)
         land.setdefault("golden_pumpkin", False)
+        land.setdefault("_maturity_roll_done", False)
     # 工厂数据
     if "factories" not in data:
         data["factories"] = {}
@@ -1589,10 +1590,15 @@ def calc_offline_v2(data):
 # ============ 金色南瓜彩蛋 ============
 
 def check_golden_pumpkin(data):
-    """南瓜成熟时1%概率变金色南瓜，需要再长一个完整周期"""
+    """南瓜首次成熟时1%概率变金色南瓜，一生仅一次"""
     now = now_dt()
     for land in data["lands"][:data.get("unlocked_lands", 6)]:
-        if land.get("crop") != "南瓜" or land.get("golden_pumpkin"):
+        if land.get("crop") != "南瓜":
+            continue
+        if land.get("_maturity_roll_done"):
+            continue
+        if land.get("golden_pumpkin"):
+            land["_maturity_roll_done"] = True
             continue
         if not land.get("plant_time"):
             continue
@@ -1600,6 +1606,8 @@ def check_golden_pumpkin(data):
         growth = calc_growth_time("南瓜", land.get("upgrade_level", 1), data.get("talent_tree", {}))
         if (now - pt).total_seconds() / 60.0 < growth:
             continue
+        # 首次成熟，一生一次的1%判定
+        land["_maturity_roll_done"] = True
         if random.random() < 0.01:
             land["golden_pumpkin"] = True
             land["plant_time"] = now_str()

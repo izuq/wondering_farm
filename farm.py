@@ -257,6 +257,8 @@ def do_plant(data, crops):
     data["gold"] -= info["seed_price"]
     land["crop"] = name
     land["plant_time"] = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    land["golden_pumpkin"] = False
+    land["_maturity_roll_done"] = False
     print(f"\n✅ 第 {lid} 号土地种下 {name}！")
     pause()
 

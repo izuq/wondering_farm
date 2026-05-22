@@ -906,12 +906,18 @@ class FarmGUIv2:
     # ==================== 土地操作 ====================
 
     def _check_golden_pumpkin_transformation(self):
-        """南瓜成熟时1%概率变金色南瓜，需要再长一个完整周期"""
+        """南瓜首次成熟时1%概率变金色南瓜，一生仅一次"""
         d = self.data
         now = now_dt()
         triggered = False
         for land in d["lands"][:d["unlocked_lands"]]:
-            if land.get("crop") != "南瓜" or land.get("golden_pumpkin"):
+            if land.get("crop") != "南瓜":
+                continue
+            # 已判定过（变金或不变），不再处理
+            if land.get("_maturity_roll_done"):
+                continue
+            if land.get("golden_pumpkin"):
+                land["_maturity_roll_done"] = True
                 continue
             if not land.get("plant_time"):
                 continue
@@ -919,7 +925,8 @@ class FarmGUIv2:
             growth = calc_growth_time("南瓜", land["upgrade_level"], d["talent_tree"])
             if (now - pt).total_seconds() / 60.0 < growth:
                 continue  # 还没成熟
-            # 成熟了，1%概率变金色南瓜
+            # 首次成熟，一生一次的1%判定
+            land["_maturity_roll_done"] = True
             if random.random() < 0.01:
                 land["golden_pumpkin"] = True
                 land["plant_time"] = now_str()  # 重置生长计时器，再长一个周期
@@ -1076,6 +1083,8 @@ class FarmGUIv2:
                 inv[name] -= 1
                 plot["crop"] = name
                 plot["plant_time"] = now_str()
+                plot["golden_pumpkin"] = False
+                plot["_maturity_roll_done"] = False
                 planted += 1
 
             dialog.destroy()
