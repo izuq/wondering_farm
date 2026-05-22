@@ -1878,6 +1878,9 @@ class FarmGUIv2:
             prod_name = a["product"] if a else "?"
             prod_price = a["sell_price"] if a else 0
 
+            # 计算出售价格
+            sell_price = self._calc_barn_animal_sell_price(barn)
+
             info = (
                 f"栏位 #{bid}\n"
                 f"动物: {barn['animal_type']}\n"
@@ -1885,15 +1888,93 @@ class FarmGUIv2:
                 f"产品: {prod_name} (售价:{prod_price}💰)\n"
                 f"等级: Lv.{barn.get('level', 1)}\n"
                 f"饲料: {feed_desc}\n"
-                f"待收: {pending} 个"
+                f"待收: {pending} 个\n"
+                f"出售价: {sell_price}💰"
             )
 
-            # 如果有待收，直接问是否收集
+            # 自定义选择对话框
+            dialog = tk.Toplevel(self.root)
+            dialog.title(f"栏位 #{bid}")
+            dialog.geometry("320x280")
+            dialog.transient(self.root)
+            dialog.grab_set()
+            dialog.configure(bg=COLORS["bg"])
+
+            tk.Label(dialog, text=info, font=F["normal"], bg=COLORS["bg"],
+                     justify="left").pack(pady=(15, 10), padx=15)
+
+            btn_frame = tk.Frame(dialog, bg=COLORS["bg"])
+            btn_frame.pack(pady=(5, 15))
+
+            actions = []
             if pending > 0:
-                if messagebox.askyesno("栏位详情", info + "\n\n有产品待收，现在收集吗？"):
-                    self._collect_single_barn(bid)
-            else:
-                messagebox.showinfo("栏位详情", info)
+                actions.append(("📦 收集产品", lambda: self._collect_single_barn(bid)))
+            actions.append(("💰 出售动物", lambda: self._sell_barn_animal(bid)))
+            actions.append(("❌ 取消", dialog.destroy))
+
+            for text, cmd in actions:
+                tk.Button(btn_frame, text=text, font=F["button"],
+                         command=lambda c=cmd: [c(), dialog.destroy() if c != cmd or text != "❌ 取消" else None],
+                         bg=COLORS["btn_bg"], width=15).pack(pady=2)
+
+    def _calc_barn_animal_sell_price(self, barn):
+        """计算出售动物的价格"""
+        a = get_barn_animal(barn["animal_type"])
+        if a is None:
+            return 0
+        base = a["price"]
+        # 基础回收价：50%
+        price = int(base * 0.5)
+        # 栏位等级加成：每级+5%
+        lv = barn.get("level", 1)
+        price += int(base * (lv - 1) * 0.05)
+        # 产出次数加成：每产出10次+2%
+        prod_count = barn.get("production_count", 0)
+        price += int(base * min(prod_count / 10 * 0.02, 0.2))
+        # 天赋加成：动物折扣天赋也影响出售价
+        discount_talent = get_talent_value(self.data["talent_tree"], "animal_discount")
+        price = int(price * (1.0 + discount_talent))
+        return max(price, int(base * 0.1))
+
+    def _sell_barn_animal(self, bid):
+        """出售栏位中的动物"""
+        d = self.data
+        barn = d["barns"][bid - 1]
+        if barn["animal"] is None:
+            return
+
+        a = get_barn_animal(barn["animal_type"])
+        sell_price = self._calc_barn_animal_sell_price(barn)
+
+        if not messagebox.askyesno("确认出售",
+            f"确定要出售栏位 #{bid} 的 {barn['animal_type']} 吗？\n"
+            f"可获得 {sell_price}💰\n"
+            f"（该操作不可撤销）"):
+            return
+
+        # 先收集待收产品
+        pending = barn.get("pending_product", 0)
+        if pending > 0:
+            inv = d["inventory"]["products"]
+            inv[a["product"]] = inv.get(a["product"], 0) + pending
+            self._log(f"📦 出售前收集 {a['product']}×{pending}")
+            barn["pending_product"] = 0
+
+        # 清空栏位
+        animal_name = barn["animal_type"]
+        barn["animal"] = None
+        barn["animal_type"] = None
+        barn["purchase_time"] = None
+        barn["age_stage"] = None
+        barn["production_count"] = 0
+        barn["last_produce_time"] = None
+        barn["pending_product"] = 0
+        barn["breed_cooldown"] = None
+        barn["fed_time"] = None
+
+        d["gold"] = d.get("gold", 0) + sell_price
+        self._log(f"💰 出售 {animal_name}，获得 {sell_price}💰")
+        self._update_ui()
 
     def _collect_single_barn(self, bid):
         """收集单个栏位产品"""
