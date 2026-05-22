@@ -20,7 +20,7 @@ if sys.stdout.encoding and "UTF" not in sys.stdout.encoding.upper():
         pass
 
 # ============ 常量配置 ============
-CROPS_FILE = "crops.json"
+CROPS_FILE = os.path.join(os.path.dirname(os.path.abspath(__file__)), "data", "crops.json")
 SAVE_FILE = "save.json"
 REFRESH_INTERVAL = 10      # 自动刷新间隔（秒）
 AUTO_SAVE_INTERVAL = 30    # 自动保存间隔（秒）
@@ -87,14 +87,15 @@ except ImportError:
 
 # ============ 作物数据 ============
 
-DEFAULT_CROPS = {
-    "小麦": {"level": 1, "growth_minutes": 30, "seed_price": 40, "sell_price": 80, "exp": 10},
-    "玉米": {"level": 2, "growth_minutes": 30, "seed_price": 50, "sell_price": 100, "exp": 12},
-    "水稻": {"level": 3, "growth_minutes": 45, "seed_price": 100, "sell_price": 200, "exp": 18},
-    "玫瑰": {"level": 4, "growth_minutes": 45, "seed_price": 160, "sell_price": 320, "exp": 25},
-    "胡萝卜": {"level": 5, "growth_minutes": 60, "seed_price": 220, "sell_price": 450, "exp": 30},
-    "南瓜": {"level": 7, "growth_minutes": 120, "seed_price": 600, "sell_price": 1200, "exp": 60},
-}
+def _default_crops():
+    return {
+        "小麦": {"level": 1, "growth_minutes": 30, "seed_price": 40, "sell_price": 80, "exp": 10},
+        "玉米": {"level": 2, "growth_minutes": 30, "seed_price": 50, "sell_price": 100, "exp": 12},
+        "水稻": {"level": 3, "growth_minutes": 45, "seed_price": 100, "sell_price": 200, "exp": 18},
+        "玫瑰": {"level": 4, "growth_minutes": 45, "seed_price": 160, "sell_price": 320, "exp": 25},
+        "胡萝卜": {"level": 5, "growth_minutes": 60, "seed_price": 220, "sell_price": 450, "exp": 30},
+        "南瓜": {"level": 7, "growth_minutes": 120, "seed_price": 600, "sell_price": 1200, "exp": 60},
+    }
 
 
 def load_crops():
@@ -103,9 +104,10 @@ def load_crops():
         with open(CROPS_FILE, "r", encoding="utf-8") as f:
             return json.load(f)
     except (FileNotFoundError, json.JSONDecodeError):
+        default = _default_crops()
         with open(CROPS_FILE, "w", encoding="utf-8") as f:
-            json.dump(DEFAULT_CROPS, f, ensure_ascii=False, indent=2)
-        return dict(DEFAULT_CROPS)
+            json.dump(default, f, ensure_ascii=False, indent=2)
+        return dict(default)
 
 
 # ============ 存档系统 ============
@@ -148,15 +150,15 @@ def write_save(data):
 # ============ 核心逻辑 ============
 
 def calc_offline(data, crops):
-    """计算离线收益（启动时调用）"""
+    """计算离线收益（启动时调用），返回 (gold, exp, count)"""
     try:
         last = datetime.datetime.strptime(data["last_save_time"], "%Y-%m-%d %H:%M:%S")
     except ValueError:
-        return
+        return 0, 0, 0
     now = datetime.datetime.now()
     elapsed = (now - last).total_seconds() / 60.0
     if elapsed <= 0:
-        return
+        return 0, 0, 0
 
     gold, exp, count = 0, 0, 0
     for land in data["lands"]:
@@ -169,17 +171,14 @@ def calc_offline(data, crops):
             pt = datetime.datetime.strptime(land["plant_time"], "%Y-%m-%d %H:%M:%S")
         except ValueError:
             continue
-        # 检查是否有至少一次收成
         if (now - pt).total_seconds() / 60.0 < c["growth_minutes"]:
             continue
-        # 离线期间收获次数
         n = min(int(elapsed / c["growth_minutes"]), 100)
         if n <= 0:
             continue
         gold += c["sell_price"] * n
         exp += c["exp"] * n
         count += n
-        # 推进种植时间，模拟多次收获
         land["plant_time"] = (
             pt + datetime.timedelta(minutes=c["growth_minutes"] * n)
         ).strftime("%Y-%m-%d %H:%M:%S")
@@ -188,7 +187,7 @@ def calc_offline(data, crops):
         data["gold"] += gold
         data["exp"] += exp
         try_level_up(data)
-        print(f"\n📦 离线 {elapsed:.0f} 分钟，收获 {count} 次！获得 {gold}💰 {exp}✨")
+    return gold, exp, count
 
 
 def try_level_up(data):
@@ -402,7 +401,9 @@ def main():
     data = load_save()
 
     # 离线收益
-    calc_offline(data, crops)
+    gold, exp, count = calc_offline(data, crops)
+    if count > 0:
+        print(f"\n📦 离线收益：收获 {count} 次，获得 {gold}💰 {exp}✨")
     print("\n💡 按任意键进入游戏...")
     pause()
 

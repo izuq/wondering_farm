@@ -9,12 +9,10 @@ import datetime
 import time
 import random
 import threading
-import os
 import sys
 import io
 
 # ============ 从 farm_game_v2 导入所有逻辑（包含 barn 模块） ============
-sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from farm_game_v2 import (
     FACTORY_LIST, TALENTS_LIST, TALENT_GROUPS,
     ACHIEVEMENTS_LIST, SEASONS, MAX_LANDS, WAREHOUSE_CAPACITY,
@@ -35,7 +33,7 @@ from farm_game_v2 import (
     do_breed, can_breed, consume_feed,
     feed_barn_animals,
     FEED_FRUIT_NAMES,
-    reload_config, register_event_handler,
+    init_game,
 )
 from farm import SAVE_FILE
 
@@ -273,6 +271,7 @@ class FarmGUIv2:
         self.root.configure(bg=COLORS["bg"])
 
         # 游戏数据（使用 v2 加载以包含养殖场数据）
+        init_game()
         self.crops = load_crops()
         self.data = load_save_v2()
 
