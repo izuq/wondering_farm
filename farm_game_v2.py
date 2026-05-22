@@ -310,8 +310,11 @@ def do_sell(data, crops):
         return
     total = 0
     for name, qty in list(crops_inv.items()):
-        c = crops.get(name, {})
-        price = int(c.get("sell_price", 0) * (1.0 + get_talent_value(data.get("talent_tree", {}), "sell_bonus")))
+        if name == "金色南瓜":
+            price = int(12000 * (1.0 + get_talent_value(data.get("talent_tree", {}), "sell_bonus")))
+        else:
+            c = crops.get(name, {})
+            price = int(c.get("sell_price", 0) * (1.0 + get_talent_value(data.get("talent_tree", {}), "sell_bonus")))
         gold = qty * price
         total += gold
         print(f"  {name}×{qty} → {gold}💰")
@@ -622,9 +625,10 @@ def load_save_v2():
     inv.setdefault("crops", {})
     inv.setdefault("seeds", {})
     inv.setdefault("products", {})
-    # 土地补全 upgrade_level
+    # 土地补全 upgrade_level / golden_pumpkin
     for land in data.get("lands", []):
         land.setdefault("upgrade_level", 1)
+        land.setdefault("golden_pumpkin", False)
     # 工厂数据
     if "factories" not in data:
         data["factories"] = {}
@@ -1582,6 +1586,26 @@ def calc_offline_v2(data):
             print(f"   获得 {exp}✨（含离线加成）")
 
 
+# ============ 金色南瓜彩蛋 ============
+
+def check_golden_pumpkin(data):
+    """南瓜成熟时1%概率变金色南瓜，需要再长一个完整周期"""
+    now = now_dt()
+    for land in data["lands"][:data.get("unlocked_lands", 6)]:
+        if land.get("crop") != "南瓜" or land.get("golden_pumpkin"):
+            continue
+        if not land.get("plant_time"):
+            continue
+        pt = parse_dt(land["plant_time"])
+        growth = calc_growth_time("南瓜", land.get("upgrade_level", 1), data.get("talent_tree", {}))
+        if (now - pt).total_seconds() / 60.0 < growth:
+            continue
+        if random.random() < 0.01:
+            land["golden_pumpkin"] = True
+            land["plant_time"] = now_str()
+            print("  🌟 彩蛋！一块南瓜田变成了金色南瓜！再等一个生长周期即可收获！")
+
+
 # ============ 增强版主循环 ============
 
 def main_v2():
@@ -1630,7 +1654,8 @@ def main_v2():
         key = get_key(REFRESH_INTERVAL)
 
         if key is None:
-            # 定时刷新：养殖场生产和自动收集
+            # 定时刷新：金色南瓜彩蛋、养殖场生产和自动收集
+            check_golden_pumpkin(data)
             process_barn_production(data)
             auto_collect_barns(data)
             continue

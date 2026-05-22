@@ -125,9 +125,25 @@ def _draw_pumpkin(c, cx, cy, s=1.0):
     c.create_rectangle(cx-3*s, cy-12*s, cx+3*s, cy-9*s, fill="#5a8a3c", outline="#3a6a1c", width=1)
     c.create_line(cx+3*s, cy-11*s, cx+10*s, cy-15*s, cx+12*s, cy-10*s, fill="#5a8a3c", width=max(1, int(1.5*s)), smooth=True)
 
+def _draw_golden_pumpkin(c, cx, cy, s=1.0):
+    """金色南瓜图标（彩蛋）"""
+    # 主体 - 金色多层
+    c.create_oval(cx-12*s, cy-10*s, cx+12*s, cy+10*s, fill="#ffd700", outline="#b8860b", width=2)
+    for dx in [-6, 0, 6]:
+        c.create_arc(cx+dx*s-8*s, cy-10*s, cx+dx*s+8*s, cy+10*s, start=0, extent=180, fill="#ffc125", outline="", width=0)
+    # 高光
+    c.create_oval(cx-6*s, cy-7*s, cx-2*s, cy-2*s, fill="#fff8dc", outline="", width=0)
+    # 金色蒂柄
+    c.create_rectangle(cx-3*s, cy-12*s, cx+3*s, cy-9*s, fill="#8B6914", outline="#6b4e0a", width=1)
+    c.create_line(cx+3*s, cy-11*s, cx+10*s, cy-15*s, cx+12*s, cy-10*s, fill="#8B6914", width=max(1, int(2*s)), smooth=True)
+    # 闪光星星
+    for ex, ey in [(cx+6*s, cy-6*s), (cx+9*s, cy-3*s), (cx-3*s, cy+5*s), (cx-7*s, cy-4*s), (cx+4*s, cy+6*s)]:
+        c.create_text(ex, ey, text="✦", fill="#fff8dc", font=("Microsoft YaHei", max(7, int(6*s))))
+
 CROP_DRAW_FUNCS = {
     "小麦": _draw_wheat, "玉米": _draw_corn, "水稻": _draw_rice,
     "玫瑰": _draw_rose, "胡萝卜": _draw_carrot, "南瓜": _draw_pumpkin,
+    "金色南瓜": _draw_golden_pumpkin,
 }
 
 
@@ -596,7 +612,8 @@ class FarmGUIv2:
     # ==================== 界面更新 ====================
 
     def _schedule_refresh(self):
-        """5 秒自动刷新"""
+        """5 秒自动刷新（含金色南瓜检测）"""
+        self._check_golden_pumpkin_transformation()
         self._update_ui()
         self.root.after(5000, self._schedule_refresh)
 
@@ -718,8 +735,12 @@ class FarmGUIv2:
                 else:
                     pt = parse_dt(land["plant_time"])
                     growth = calc_growth_time(land["crop"], land["upgrade_level"], d["talent_tree"])
+                    # 金色南瓜需要双倍生长时间
+                    if land.get("golden_pumpkin"):
+                        growth *= 2
                     remain = growth - (now - pt).total_seconds() / 60.0
                     name = land["crop"]
+                    is_golden = land.get("golden_pumpkin", False)
 
                     if remain <= 0:
                         bg_c, border = COLORS["land_ready"], "#90c090"
@@ -730,16 +751,18 @@ class FarmGUIv2:
                     # 土地编号
                     self.land_canvas.create_text(cx, y0 + 4, text=f"#{lid}", font=ft2, fill="#333", anchor="n")
 
-                    # 作物图标
+                    # 作物图标（金色南瓜用特殊图标）
                     size = min(cell_w, cell_h) * 0.55
                     s = size / 32
-                    draw_func = CROP_DRAW_FUNCS.get(name)
+                    draw_name = "金色南瓜" if is_golden else name
+                    draw_func = CROP_DRAW_FUNCS.get(draw_name)
                     if draw_func:
                         draw_func(self.land_canvas, cx, cy_ - 1, s)
 
                     # 状态文字
                     if remain <= 0:
-                        self.land_canvas.create_text(cx, y1 - 4, text="✅", font=ft2, fill="#28a745", anchor="s")
+                        icon = "🌟" if is_golden else "✅"
+                        self.land_canvas.create_text(cx, y1 - 4, text=icon, font=ft2, fill="#b8860b" if is_golden else "#28a745", anchor="s")
                     else:
                         m, sec = int(remain), int((remain - int(remain)) * 60)
                         self.land_canvas.create_text(cx, y1 - 3, text=f"{m}:{sec:02d}", font=ft2, fill="#333", anchor="s")
@@ -882,6 +905,28 @@ class FarmGUIv2:
 
     # ==================== 土地操作 ====================
 
+    def _check_golden_pumpkin_transformation(self):
+        """南瓜成熟时1%概率变金色南瓜，需要再长一个完整周期"""
+        d = self.data
+        now = now_dt()
+        triggered = False
+        for land in d["lands"][:d["unlocked_lands"]]:
+            if land.get("crop") != "南瓜" or land.get("golden_pumpkin"):
+                continue
+            if not land.get("plant_time"):
+                continue
+            pt = parse_dt(land["plant_time"])
+            growth = calc_growth_time("南瓜", land["upgrade_level"], d["talent_tree"])
+            if (now - pt).total_seconds() / 60.0 < growth:
+                continue  # 还没成熟
+            # 成熟了，1%概率变金色南瓜
+            if random.random() < 0.01:
+                land["golden_pumpkin"] = True
+                land["plant_time"] = now_str()  # 重置生长计时器，再长一个周期
+                self._log("🌟 彩蛋！一块南瓜田变成了金色南瓜！再等一个生长周期即可收获！")
+                triggered = True
+        return triggered
+
     def _on_land_click(self, event):
         """点击 Canvas 土地网格"""
         cw = self.land_canvas.winfo_width()
@@ -893,17 +938,22 @@ class FarmGUIv2:
             return
         land = self.data["lands"][lid - 1]
         if land["crop"]:
+            is_golden = land.get("golden_pumpkin", False)
             pt = parse_dt(land["plant_time"])
             growth = calc_growth_time(land["crop"], land["upgrade_level"], self.data["talent_tree"])
+            if is_golden:
+                growth *= 2
             remain = growth - (now_dt() - pt).total_seconds() / 60.0
             if remain <= 0:
-                if messagebox.askyesno("收获", f"第 {lid} 号土地的 {land['crop']} 已成熟，收获吗？"):
+                name = "金色南瓜🌟" if is_golden else land["crop"]
+                if messagebox.askyesno("收获", f"第 {lid} 号土地的 {name} 已成熟，收获吗？"):
                     self._harvest_single(lid)
             else:
+                name = "金色南瓜" if is_golden else land["crop"]
                 m = int(remain)
                 s = int((remain - m) * 60)
                 messagebox.showinfo("生长中", f"第 {lid} 号土地\n"
-                                    f"作物：{land['crop']}\n"
+                                    f"作物：{name}\n"
                                     f"剩余：{m}分{s}秒\n"
                                     f"等级：Lv.{land['upgrade_level']}")
         else:
@@ -911,29 +961,46 @@ class FarmGUIv2:
                 self._show_plant_dialog(lid)
 
     def _harvest_single(self, lid):
-        """收获单块土地"""
+        """收获单块土地（含金色南瓜彩蛋）"""
         land = self.data["lands"][lid - 1]
         if not land["crop"]:
             return
-        c = self.crops.get(land["crop"])
-        if not c:
-            return
-        season, _ = get_season(self.data)
-        ym = calc_yield_multiplier(land["upgrade_level"], self.data["talent_tree"],
-                                   land["crop"], season)
-        qty = max(1, int(ym))
-        dc = get_double_chance(land["upgrade_level"], self.data["talent_tree"])
-        if random.random() < dc:
-            qty *= 2
+        is_golden = land.get("golden_pumpkin", False)
+        crop_name = "金色南瓜" if is_golden else land["crop"]
 
-        inv = self.data["inventory"]["crops"]
-        inv[land["crop"]] = inv.get(land["crop"], 0) + qty
-        self.data["exp"] += c["exp"]
-        self.data["total_harvests"] += 1
-        try_level_up(self.data)
-        self._log(f"🌾 收获第 {lid} 号土地 {land['crop']}×{qty}，获得 {c['exp']}✨")
+        if is_golden:
+            # 金色南瓜：10倍售价，固定1个，不享受季节加成/双倍
+            c = self.crops.get("南瓜")
+            if not c:
+                return
+            qty = 1
+            self.data["inventory"]["crops"]["金色南瓜"] = self.data["inventory"]["crops"].get("金色南瓜", 0) + 1
+            self.data["exp"] += c["exp"] * 2
+            self.data["total_harvests"] += 1
+            try_level_up(self.data)
+            self._log("🌟 收获金色南瓜！价值 10 倍！")
+        else:
+            c = self.crops.get(land["crop"])
+            if not c:
+                return
+            season, _ = get_season(self.data)
+            ym = calc_yield_multiplier(land["upgrade_level"], self.data["talent_tree"],
+                                       land["crop"], season)
+            qty = max(1, int(ym))
+            dc = get_double_chance(land["upgrade_level"], self.data["talent_tree"])
+            if random.random() < dc:
+                qty *= 2
+
+            inv = self.data["inventory"]["crops"]
+            inv[land["crop"]] = inv.get(land["crop"], 0) + qty
+            self.data["exp"] += c["exp"]
+            self.data["total_harvests"] += 1
+            try_level_up(self.data)
+            self._log(f"🌾 收获第 {lid} 号土地 {land['crop']}×{qty}，获得 {c['exp']}✨")
+
         land["crop"] = None
         land["plant_time"] = None
+        land["golden_pumpkin"] = False
         self._update_ui()
 
     def _show_plant_dialog(self, lid=None):
@@ -1172,6 +1239,9 @@ class FarmGUIv2:
 
         for land in d["lands"][:d["unlocked_lands"]]:
             if not land["crop"] or not land["plant_time"]:
+                continue
+            # 金色南瓜只能手动收获，一键收获跳过
+            if land.get("golden_pumpkin"):
                 continue
             c = self.crops.get(land["crop"])
             if not c:
@@ -1499,8 +1569,11 @@ class FarmGUIv2:
             total_qty = 0
             inv = d["inventory"]["crops"]
             for name, qty in list(inv.items()):
-                c = self.crops.get(name, {})
-                price = int(c.get("sell_price", 0) * (1.0 + get_talent_value(d["talent_tree"], "sell_bonus")))
+                if name == "金色南瓜":
+                    price = int(12000 * (1.0 + get_talent_value(d["talent_tree"], "sell_bonus")))
+                else:
+                    c = self.crops.get(name, {})
+                    price = int(c.get("sell_price", 0) * (1.0 + get_talent_value(d["talent_tree"], "sell_bonus")))
                 if d.get("event_active", {}).get("harvest_festival"):
                     price *= 2
                 total_gold += qty * price
@@ -1603,8 +1676,11 @@ class FarmGUIv2:
             for name, qty in sorted(d["inventory"]["crops"].items()):
                 if qty <= 0:
                     continue
-                c = self.crops.get(name, {})
-                price = int(c.get("sell_price", 0) * (1.0 + get_talent_value(d["talent_tree"], "sell_bonus")))
+                if name == "金色南瓜":
+                    price = int(12000 * (1.0 + get_talent_value(d["talent_tree"], "sell_bonus")))
+                else:
+                    c = self.crops.get(name, {})
+                    price = int(c.get("sell_price", 0) * (1.0 + get_talent_value(d["talent_tree"], "sell_bonus")))
                 if d.get("event_active", {}).get("harvest_festival"):
                     price *= 2
                 text = f"{name}  ×{qty}  →  {price}💰/个  =  {qty * price}💰"
