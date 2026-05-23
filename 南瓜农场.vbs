@@ -3,12 +3,13 @@ curDir = fso.GetParentFolderName(WScript.ScriptFullName)
 Set ws = CreateObject("Wscript.Shell")
 ws.CurrentDirectory = curDir
 
-' 更新快捷方式图标路径，确保移动到其他目录后图标依然有效
+' 修复快捷方式路径，确保项目迁移后依然可用
 lnkPath = curDir & "\南瓜农场.lnk"
-icoPath = curDir & "\南瓜农场.ico"
-If fso.FileExists(lnkPath) And fso.FileExists(icoPath) Then
+If fso.FileExists(lnkPath) Then
     Set sc = ws.CreateShortcut(lnkPath)
-    sc.IconLocation = icoPath & ", 0"
+    sc.TargetPath = curDir & "\南瓜农场.vbs"
+    sc.WorkingDirectory = curDir
+    sc.IconLocation = curDir & "\南瓜农场.ico, 0"
     sc.Save()
 End If
 

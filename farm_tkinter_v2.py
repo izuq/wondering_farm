@@ -440,20 +440,10 @@ class FarmGUIv2:
         icon_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "南瓜农场.ico")
         if os.path.exists(icon_path):
             try:
-                self.root.iconbitmap(bitmap=icon_path)
-            except:
+                self.root.iconbitmap(default=icon_path)
+            except Exception:
                 pass
-            try:
-                import ctypes
-                hwnd = self.root.winfo_id()
-                if isinstance(hwnd, str):
-                    hwnd = int(hwnd, 16) if hwnd.startswith("0x") else int(hwnd)
-                hicon = ctypes.windll.user32.LoadImageW(None, icon_path, 1, 0, 0, 0x00000010)
-                if hicon:
-                    ctypes.windll.user32.SendMessageW(hwnd, 0x0080, 1, hicon)
-                    ctypes.windll.user32.SendMessageW(hwnd, 0x0080, 0, hicon)
-            except:
-                pass
+            self.root.after(100, self._set_taskbar_icon, icon_path)
 
         # 游戏数据（使用 v2 加载以包含养殖场数据）
         init_game()
@@ -491,6 +481,23 @@ class FarmGUIv2:
 
         # 关闭事件
         self.root.protocol("WM_DELETE_WINDOW", self._on_close)
+
+    def _set_taskbar_icon(self, icon_path):
+        """延迟设置任务栏图标，确保窗口句柄已就绪"""
+        try:
+            import ctypes
+            hwnd = self.root.winfo_id()
+            if isinstance(hwnd, str):
+                hwnd = int(hwnd, 16) if hwnd.startswith("0x") else int(hwnd)
+            hwnd = int(hwnd)
+            # LoadImage: IMAGE_ICON=1, LR_LOADFROMFILE=0x10
+            hicon = ctypes.windll.user32.LoadImageW(None, icon_path, 1, 0, 0, 0x00000010)
+            if hicon:
+                # WM_SETICON: ICON_BIG=1, ICON_SMALL=0
+                ctypes.windll.user32.SendMessageW(hwnd, 0x0080, 1, hicon)
+                ctypes.windll.user32.SendMessageW(hwnd, 0x0080, 0, hicon)
+        except Exception:
+            pass
 
     # ==================== 离线计算 ====================
 
