@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """
-开心农场 v2.0 — 终端版 UI（从 farm_game_v2.py 拆分）
+开心农场 v3.0 — 终端版
 """
 import sys
 import os
@@ -770,7 +770,7 @@ def do_upgrade_barn_menu(data):
 # ============ 增强版主循环 ============
 
 def main_v2():
-    """养殖场增强版主循环"""
+    """v3.0 主循环"""
     init_game()
     crops_game = load_crops()
     data = load_save_v2()
@@ -809,7 +809,7 @@ def main_v2():
         print("  [1]种植    [2]收获    [3]土地    [4]养殖场")
         print("  [5]农业建筑 [6]出售    [7]升级    [8]天赋")
         print("  [9]成就    [U]解锁   [A]自动收集 [S]保存")
-        print("  [H]帮助   [X]退出")
+        print("  [H]农场手册   [X]退出")
         print()
 
         key = get_key(REFRESH_INTERVAL)
@@ -918,7 +918,7 @@ def main_v2():
         elif key in (b"h", b"H"):
             clear()
             header(data)
-            show_help()
+            show_help(crops_game)
             print(f"  [A] 自动收集动物产品")
             print(f"  [4] 进入养殖场（购买、繁殖、投喂等）")
             print(f"  [5] 农业建筑（建造饲料工厂、加工饲料）")

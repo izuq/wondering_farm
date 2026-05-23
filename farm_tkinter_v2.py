@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """
-开心农场 v2.0 — tkinter 图形界面版（养殖场增强版）
+开心农场 v3.0
 """
 import tkinter as tk
 from tkinter import ttk, messagebox
@@ -51,6 +51,7 @@ from farm_game_v2 import (
     _feed_inv,
     # 酿酒
     BREW_RECIPES, BREW_RECIPES_BY_LEVEL, get_recipe_list, get_recipes_by_level,
+    _SEASON_BONUS_MAP,
 )
 from farm import SAVE_FILE
 
@@ -66,6 +67,7 @@ def get_fonts():
         "button": (families, 11),
         "land": (families, 10),
         "barn": (families, 10),
+        "help": (families, 11),
     }
 
 F = get_fonts()
@@ -431,7 +433,7 @@ ANIMAL_DRAW_FUNCS = {
 class FarmGUIv2:
     def __init__(self):
         self.root = tk.Tk()
-        self.root.title("开心农场 v2.0 — 养殖场增强版")
+        self.root.title("开心农场 v3.0")
         self.root.geometry("1000x760")
         self.root.minsize(950, 720)
         self.root.configure(bg=COLORS["bg"])
@@ -460,7 +462,7 @@ class FarmGUIv2:
         self._save_pending = False
         self.current_tab = "land"  # "land" or "barn"
 
-        # F1 帮助快捷键
+        # F1 农场手册快捷键
         self.root.bind("<F1>", lambda e: self._show_help())
 
         # 创建界面
@@ -470,7 +472,7 @@ class FarmGUIv2:
         self._create_event_log()
 
         # 检查成就
-        self._log("💡 欢迎回到开心农场 v2.0（养殖场增强版）！")
+        self._log("💡 欢迎回到开心农场 v3.0！")
         new_achs = check_achievements(self.data)
         if new_achs:
             self._log(f"🏆 达成 {new_achs} 个新成就！")
@@ -568,7 +570,7 @@ class FarmGUIv2:
         for key, text, cmd in [
             ("shop", "🏪 商店", self._on_shop),
             ("save", "💾 保存", self._on_save),
-            ("help", "📖 帮助", self._on_help),
+            ("help", "📖 农场手册", self._show_help),
         ]:
             btn = tk.Button(tab_frame, text=text, font=F["button"],
                            command=cmd, bg=COLORS["btn_bg"],
@@ -2110,7 +2112,7 @@ class FarmGUIv2:
                 discount = get_talent_value(d["talent_tree"], "seed_discount")
                 price = int(c["seed_price"] * (1.0 - discount))
                 can = d["gold"] >= price
-                text = f"{i}. {n}  {price}💰 (原{c['seed_price']})  {'✅' if can else '❌'}"
+                text = f"{i}. {n}  {price}💰  {'✅' if can else '❌'}"
                 btn = tk.Button(scroll_frame, text=text, font=F["small"],
                                 anchor="w", padx=5,
                                 command=lambda x=n, p=price: buy(x, p),
@@ -2325,8 +2327,7 @@ class FarmGUIv2:
                     price = int(c["seed_price"] * (1.0 - discount))
                     can = d["gold"] >= price
                     disc_tag = "🔥" if merchant_disc > 0 else ""
-                    text = f"{disc_tag}{i}. {n}  {price}💰(原{c['seed_price']})  Lv.{c['level']}  "
-                    text += f"生长{c['growth_minutes']}min  售{c['sell_price']}💰  {'✅' if can else '❌'}"
+                    text = f"{disc_tag}{i}. {n}  {price}💰  {'✅' if can else '❌'}"
 
                     def buy_seed(name=n, p=price):
                         qty = self._quantity_dialog(f"购买 {name}", parent=dialog, unit_price=p, gold=d["gold"])
@@ -2349,7 +2350,7 @@ class FarmGUIv2:
                                     state="normal" if can else "disabled",
                                     relief="groove", bd=1)
                 else:
-                    text = f"🔒 {i}. {n}  需Lv.{c['level']}  生长{c['growth_minutes']}min  售{c['sell_price']}💰"
+                    text = f"🔒 {i}. {n}  需Lv.{c['level']}"
                     btn = tk.Button(seed_inner, text=text, font=F["small"],
                                     anchor="w", padx=5, state="disabled",
                                     bg="#f0f0f0", relief="groove", bd=1)
@@ -2378,15 +2379,13 @@ class FarmGUIv2:
                 discount = 1.0 - get_talent_value(d["talent_tree"], "animal_discount")
                 price = int(a["price"] * discount)
                 can = unlocked and d["gold"] >= price
-                feed_desc = "+".join(f"{k}×{v}" for k, v in a["feed"].items())
                 if not unlocked:
-                    text = f"🔒 {i}. {a['name']}  需Lv.{a['level']}  {a['price']}💰  →{a['product']}({a['sell_price']}💰)"
+                    text = f"🔒 {i}. {a['name']}  需Lv.{a['level']}  {a['price']}💰"
                     btn = tk.Button(animal_inner, text=text, font=F["small"],
                                     anchor="w", padx=5, state="disabled",
                                     bg="#eee", relief="groove", bd=1)
                 else:
-                    text = f"{i}. {a['name']}  {price}💰(原{a['price']})  →{a['product']}({a['sell_price']}💰)"
-                    text += f"  饲料:{feed_desc}  {'✅' if can else '❌'}"
+                    text = f"{i}. {a['name']}  {price}💰  {'✅' if can else '❌'}"
 
                     def buy_animal(name=a["name"]):
                         ub = d.get("unlocked_barns", INITIAL_BARNS)
@@ -3091,7 +3090,7 @@ class FarmGUIv2:
 
     def _on_help(self):
         msg = (
-            "🌾 开心农场 v2.0 — 养殖场增强版\n\n"
+            "🌾 开心农场 v3.0\n\n"
             "【土地操作】\n"
             "1. 种植：点击「种植」或空闲土地\n"
             "2. 收获：点击「收获」批量成熟作物\n"
@@ -3112,7 +3111,7 @@ class FarmGUIv2:
             "- 动物经历 幼年→成年→老年 三个阶段\n"
             "- 自动保存每 5 分钟"
         )
-        messagebox.showinfo("帮助", msg)
+        messagebox.showinfo("农场手册", msg)
 
     # ==================== 养殖场操作 ====================
 
@@ -3821,29 +3820,49 @@ class FarmGUIv2:
             self._log(f"⚠️ 忽略预警，事件即将发生...")
         self._warning_shown = False
 
-    # ---------- 帮助 ----------
+    # ---------- 农场手册 ----------
     def _show_help(self):
         dialog = tk.Toplevel(self.root)
-        dialog.title("📖 帮助")
-        dialog.geometry("550x500")
+        dialog.title("📖 农场手册")
+        dialog.geometry("620x600")
         dialog.transient(self.root)
         dialog.grab_set()
 
-        tk.Label(dialog, text="📖 南瓜农场 v2.1 帮助", font=F["title"]).pack(pady=(10, 5))
+        tk.Label(dialog, text="📖 开心农场 v3.0 农场手册", font=F["title"]).pack(pady=(10, 5))
 
         frame = tk.Frame(dialog)
         frame.pack(fill="both", expand=True, padx=10, pady=5)
 
-        canvas = tk.Canvas(frame, highlightthickness=0)
-        scrollbar = tk.Scrollbar(frame, orient="vertical", command=canvas.yview)
-        scroll_frame = tk.Frame(canvas)
-        scroll_frame.bind("<Configure>", lambda e: canvas.configure(scrollregion=canvas.bbox("all")))
-        canvas.create_window((0, 0), window=scroll_frame, anchor="nw")
-        canvas.configure(yscrollcommand=scrollbar.set)
-        canvas.pack(side="left", fill="both", expand=True)
+        text_widget = tk.Text(frame, font=F["help"],
+                 bg=COLORS["bg"], fg="black", wrap="word",
+                 spacing1=4, spacing3=4,
+                 relief="flat", highlightthickness=0)
+        scrollbar = tk.Scrollbar(frame, orient="vertical", command=text_widget.yview)
+        text_widget.configure(yscrollcommand=scrollbar.set)
+        text_widget.pack(side="left", fill="both", expand=True)
         scrollbar.pack(side="right", fill="y")
 
-        help_text = """
+        crops_self = self.crops
+        crop_lines = []
+        for n, c in sorted(crops_self.items(), key=lambda x: x[1].get("level", 99)):
+            if c.get("hidden"):
+                continue
+            season_bonus = ""
+            for s, clist in _SEASON_BONUS_MAP.items():
+                if n in clist:
+                    season_bonus = f" [{s}季×1.5]"
+            crop_lines.append(f"  {n:<6} Lv.{c['level']:<2} 种子{c['seed_price']:>5}💰 售{c['sell_price']:>5}💰 生长{c['growth_minutes']}min{season_bonus}")
+        crop_str = "\n".join(crop_lines)
+
+        animal_lines = []
+        for a in BARN_ANIMALS_LIST:
+            if a.get("hidden"):
+                continue
+            feed_str = "+".join(f"{k}{v}" for k, v in a["feed"].items())
+            animal_lines.append(f"  {a['name']:<4} Lv.{a['level']:<2} {a['price']:>5}💰 →{a['product']:<4}售{a['sell_price']}💰 周期{a['cycle']}min 饲料:{feed_str}")
+        animal_str = "\n".join(animal_lines)
+
+        help_text = f"""
 🌟 季节系统
 - 4个季节循环：春→夏→秋→冬，每季120分钟
 - 当季作物产量×1.5
@@ -3854,11 +3873,17 @@ class FarmGUIv2:
 - 升级费用随等级递增
 - 累积产量：小数部分不会损失，累积到下次收获
 
+🌾 作物一览
+{crop_str}
+
 🐔 养殖系统
 - 初始6个栏位，最多50个
 - 动物生命周期：幼年(前2次产出减半)→成年→老年(40次后减产30%)
 - 栏位升级：每级获得速度/产量/双倍等加成
 - 繁殖：选两只同种成年动物，基础75%成功率，亲本栏位≥5级各+5%
+
+🐓 动物一览
+{animal_str}
 
 🍽️ 饲料系统
 - 首次投喂后动物开始产出，每产出周期自动消耗饲料
@@ -3899,10 +3924,10 @@ class FarmGUIv2:
 - 享受离线收益天赋加成
 
 快捷键
-- F1: 打开帮助
+- F1: 打开农场手册
 """
-        tk.Label(scroll_frame, text=help_text, font=F["small"],
-                 bg=COLORS["bg"], justify="left", anchor="w").pack(fill="both")
+        text_widget.insert("1.0", help_text)
+        text_widget.config(state="disabled")
 
         tk.Button(dialog, text="关闭", font=F["button"],
                   command=dialog.destroy, width=10).pack(pady=(5, 10))

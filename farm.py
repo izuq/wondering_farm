@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """
-开心农场 - 终端版
+开心农场 v3.0
 基于 Python 标准库的农场模拟游戏
 支持离线收益、等级系统、自动保存与自动刷新
 """
@@ -338,19 +338,18 @@ def show_shop(crops):
     print(f"\n{'=' * 58}")
     print(f"  🏪 商店")
     print(f"{'=' * 58}")
-    print(f"  {'作物':<8}  {'等级':<6}  {'种子价':<8}  {'售价':<8}  {'生长':<10}  {'经验':<6}")
-    print(f"  " + "-" * 50)
     for n, i in crops.items():
-        print(f"  {n:<8}  Lv.{i['level']:<4}  {i['seed_price']:<8}  {i['sell_price']:<8}  "
-              f"{i['growth_minutes']}min{'':7}  {i['exp']:<6}")
+        if i.get("hidden"):
+            continue
+        print(f"  {n:<8}  种子{i['seed_price']:>5}💰  售{i['sell_price']:>5}💰")
     print(f"{'=' * 58}")
     pause()
 
 
-def show_help():
-    """帮助"""
+def show_help(crops=None):
+    """农场手册"""
     print(f"\n{'=' * 50}")
-    print(f"  📖 游戏帮助")
+    print(f"  📖 农场手册")
     print(f"{'=' * 50}")
     print(f"  [1] 种植 —— 选择土地播种作物")
     print(f"  [2] 收获 —— 收获所有成熟作物")
@@ -358,8 +357,18 @@ def show_help():
     print(f"  [4] 土地 —— 查看每块土地详情")
     print(f"  [5] 保存 —— 手动存档")
     print(f"  [6] 商店 —— 作物价格一览")
-    print(f"  [7] 帮助 —— 显示本页面")
+    print(f"  [7] 农场手册 —— 显示本页面")
     print(f"  [8] 退出 —— 保存并退出")
+
+    if crops:
+        print(f"\n  🌾 作物一览")
+        print(f"  " + "-" * 48)
+        for n, i in sorted(crops.items(), key=lambda x: x[1].get("level", 99)):
+            if i.get("hidden"):
+                continue
+            print(f"  {n:<6} Lv.{i['level']:<2} 种子{i['seed_price']:>5}💰 售{i['sell_price']:>5}💰  "
+                  f"生长{i['growth_minutes']}min")
+
     print(f"\n  💡 界面每 {REFRESH_INTERVAL} 秒自动刷新")
     print(f"  💡 游戏每 {AUTO_SAVE_INTERVAL} 秒自动保存")
     print(f"  💡 离线收益自动计算")
@@ -390,7 +399,7 @@ def menu():
     """主菜单"""
     print()
     print("    [1]种植    [2]收获    [3]状态    [4]土地")
-    print("    [5]保存    [6]商店    [7]帮助    [8]退出")
+    print("    [5]保存    [6]商店    [7]农场手册    [8]退出")
     print()
 
 
