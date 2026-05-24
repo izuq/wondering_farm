@@ -1,0 +1,21 @@
+{
+  "小麦":    {"level": 1,  "growth_minutes": 30,   "seed_price": 40,   "sell_price": 80,    "exp": 10},
+  "玉米":    {"level": 2,  "growth_minutes": 30,   "seed_price": 50,   "sell_price": 100,   "exp": 12},
+  "水稻":    {"level": 3,  "growth_minutes": 45,   "seed_price": 100,  "sell_price": 200,   "exp": 18},
+  "玫瑰":    {"level": 4,  "growth_minutes": 45,   "seed_price": 160,  "sell_price": 320,   "exp": 25},
+  "胡萝卜":  {"level": 5,  "growth_minutes": 60,   "seed_price": 220,  "sell_price": 450,   "exp": 30},
+  "土豆":    {"level": 6,  "growth_minutes": 90,   "seed_price": 380,  "sell_price": 760,   "exp": 38},
+  "南瓜":    {"level": 7,  "growth_minutes": 120,  "seed_price": 600,  "sell_price": 1200,  "exp": 60},
+  "番茄":    {"level": 8,  "growth_minutes": 120,  "seed_price": 700,  "sell_price": 1400,  "exp": 55},
+  "草莓":    {"level": 9,  "growth_minutes": 150,  "seed_price": 1000, "sell_price": 2000,  "exp": 75},
+  "蓝莓":    {"level": 11, "growth_minutes": 180,  "seed_price": 1400, "sell_price": 2800,  "exp": 100},
+  "咖啡豆":  {"level": 14, "growth_minutes": 240,  "seed_price": 2000, "sell_price": 4000,  "exp": 140},
+  "棉花":    {"level": 17, "growth_minutes": 360,  "seed_price": 3000, "sell_price": 6000,  "exp": 200},
+  "甘蔗":    {"level": 20, "growth_minutes": 480,  "seed_price": 4500, "sell_price": 9000,  "exp": 280},
+  "葡萄":    {"level": 23, "growth_minutes": 720,  "seed_price": 7000, "sell_price": 14000, "exp": 400},
+  "可可豆":  {"level": 26, "growth_minutes": 960,  "seed_price": 10000,"sell_price": 20000, "exp": 550},
+  "茶叶":    {"level": 29, "growth_minutes": 1200, "seed_price": 15000,"sell_price": 30000, "exp": 750},
+  "四叶草":  {"level": 1,  "growth_minutes": 360,  "seed_price": 100,  "sell_price": 666,   "exp": 50,  "hidden": true},
+  "黄金小麦":{"level": 10, "growth_minutes": 60,   "seed_price": 500,  "sell_price": 2000,  "exp": 100, "hidden": true},
+  "彩虹花":  {"level": 35, "growth_minutes": 1440, "seed_price": 10000,"sell_price": 30000, "exp": 2000, "hidden": true}
+}

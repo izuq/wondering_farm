@@ -1,17 +1,17 @@
 {
-  "gold": 184365,
-  "level": 56,
-  "exp": 162,
-  "talent_points": 39,
-  "last_save_time": "2026-05-24 23:48:36",
+  "gold": 16185,
+  "level": 55,
+  "exp": 1751,
+  "talent_points": 38,
+  "last_save_time": "2026-05-24 18:20:58",
   "lands": [
     {
       "id": 1,
-      "crop": "南瓜",
-      "plant_time": "2026-05-24 21:18:01",
+      "crop": null,
+      "plant_time": null,
       "upgrade_level": 6,
       "golden_pumpkin": false,
-      "_maturity_roll_done": true,
+      "_maturity_roll_done": false,
       "_yield_remainder": 0.5,
       "_pest_reduced_yield": null,
       "_wind_delay": 0
@@ -73,12 +73,12 @@
     },
     {
       "id": 7,
-      "crop": "葡萄",
-      "plant_time": "2026-05-24 21:29:31",
+      "crop": "茶叶",
+      "plant_time": "2026-05-24 10:42:54",
       "upgrade_level": 1,
       "golden_pumpkin": false,
       "_maturity_roll_done": false,
-      "_yield_remainder": 0.0,
+      "_yield_remainder": 0.5,
       "_pest_reduced_yield": null,
       "_wind_delay": 0
     },
@@ -360,11 +360,11 @@
     {
       "id": 33,
       "crop": "南瓜",
-      "plant_time": "2026-05-24 06:46:18",
+      "plant_time": "2026-05-24 05:40:18",
       "upgrade_level": 10,
       "golden_pumpkin": true,
       "_maturity_roll_done": true,
-      "_yield_remainder": 0.2999999999999998,
+      "_yield_remainder": 0.1499999999999999,
       "_pest_reduced_yield": null,
       "_wind_delay": 0
     },
@@ -524,8 +524,19 @@
     },
     {
       "id": 48,
-      "crop": "小麦",
-      "plant_time": "2026-05-24 21:58:18",
+      "crop": "南瓜",
+      "plant_time": "2026-05-24 15:59:40",
+      "upgrade_level": 1,
+      "golden_pumpkin": false,
+      "_maturity_roll_done": true,
+      "_yield_remainder": 0.75,
+      "_pest_reduced_yield": null,
+      "_wind_delay": 0
+    },
+    {
+      "id": 49,
+      "crop": "蓝莓",
+      "plant_time": "2026-05-24 15:59:53",
       "upgrade_level": 1,
       "golden_pumpkin": false,
       "_maturity_roll_done": false,
@@ -534,20 +545,9 @@
       "_wind_delay": 0
     },
     {
-      "id": 49,
-      "crop": "蓝莓",
-      "plant_time": "2026-05-24 21:29:37",
-      "upgrade_level": 1,
-      "golden_pumpkin": false,
-      "_maturity_roll_done": false,
-      "_yield_remainder": 0.5,
-      "_pest_reduced_yield": null,
-      "_wind_delay": 0
-    },
-    {
       "id": 50,
-      "crop": "玉米",
-      "plant_time": "2026-05-24 21:59:45",
+      "crop": "番茄",
+      "plant_time": "2026-05-24 16:00:20",
       "upgrade_level": 1,
       "golden_pumpkin": false,
       "_maturity_roll_done": false,
@@ -565,12 +565,12 @@
       "animal_type": "鸡",
       "purchase_time": "2026-05-20 14:46:36",
       "age_stage": "elder",
-      "production_count": 175,
-      "last_produce_time": "2026-05-24 23:45:00",
-      "pending_product": 6,
+      "production_count": 163,
+      "last_produce_time": "2026-05-24 18:11:07",
+      "pending_product": 5,
       "breed_cooldown": null,
       "fed_time": "2026-05-20 15:10:39",
-      "_yield_remainder": -15.180000000000007
+      "_yield_remainder": -12.420000000000003
     },
     {
       "id": 2,
@@ -580,12 +580,12 @@
       "animal_type": "鸡",
       "purchase_time": "2026-05-20 15:10:47",
       "age_stage": "elder",
-      "production_count": 167,
-      "last_produce_time": "2026-05-24 23:20:26",
+      "production_count": 157,
+      "last_produce_time": "2026-05-24 18:14:40",
       "pending_product": 5,
       "breed_cooldown": null,
       "fed_time": "2026-05-20 15:11:09",
-      "_yield_remainder": -18.000000000000014
+      "_yield_remainder": -15.00000000000001
     },
     {
       "id": 3,
@@ -595,12 +595,12 @@
       "animal_type": "鸡",
       "purchase_time": "2026-05-20 15:10:50",
       "age_stage": "elder",
-      "production_count": 158,
-      "last_produce_time": "2026-05-24 23:45:00",
-      "pending_product": 6,
+      "production_count": 146,
+      "last_produce_time": "2026-05-24 18:11:07",
+      "pending_product": 5,
       "breed_cooldown": null,
       "fed_time": "2026-05-20 15:11:09",
-      "_yield_remainder": -11.270000000000007
+      "_yield_remainder": -8.510000000000003
     },
     {
       "id": 4,
@@ -610,12 +610,12 @@
       "animal_type": "鸡",
       "purchase_time": "2026-05-20 15:10:55",
       "age_stage": "elder",
-      "production_count": 133,
-      "last_produce_time": "2026-05-24 23:20:26",
+      "production_count": 123,
+      "last_produce_time": "2026-05-24 18:14:40",
       "pending_product": 5,
       "breed_cooldown": null,
       "fed_time": "2026-05-20 15:11:09",
-      "_yield_remainder": -7.799999999999999
+      "_yield_remainder": -4.8
     },
     {
       "id": 5,
@@ -625,12 +625,12 @@
       "animal_type": "鸡",
       "purchase_time": "2026-05-20 15:10:58",
       "age_stage": "elder",
-      "production_count": 133,
-      "last_produce_time": "2026-05-24 23:20:26",
+      "production_count": 123,
+      "last_produce_time": "2026-05-24 18:14:40",
       "pending_product": 5,
       "breed_cooldown": null,
       "fed_time": "2026-05-20 15:11:09",
-      "_yield_remainder": -7.799999999999999
+      "_yield_remainder": -4.8
     },
     {
       "id": 6,
@@ -670,12 +670,12 @@
       "animal_type": "兔",
       "purchase_time": "2026-05-21 08:57:10",
       "age_stage": "elder",
-      "production_count": 49,
-      "last_produce_time": "2026-05-24 23:14:20",
+      "production_count": 44,
+      "last_produce_time": "2026-05-24 17:44:06",
       "pending_product": 2,
       "breed_cooldown": null,
       "fed_time": "2026-05-21 08:57:30",
-      "_yield_remainder": -2.7
+      "_yield_remainder": -1.2000000000000002
     },
     {
       "id": 9,
@@ -685,12 +685,12 @@
       "animal_type": "鸭",
       "purchase_time": "2026-05-21 08:57:14",
       "age_stage": "elder",
-      "production_count": 67,
-      "last_produce_time": "2026-05-24 23:22:33",
-      "pending_product": 3,
+      "production_count": 60,
+      "last_produce_time": "2026-05-24 18:03:38",
+      "pending_product": 4,
       "breed_cooldown": null,
       "fed_time": "2026-05-21 08:57:30",
-      "_yield_remainder": -5.699999999999998
+      "_yield_remainder": -3.5999999999999996
     },
     {
       "id": 10,
@@ -717,7 +717,7 @@
       "age_stage": "adult",
       "production_count": 25,
       "last_produce_time": "2026-05-24 16:43:47",
-      "pending_product": 0,
+      "pending_product": 1,
       "breed_cooldown": "2026-05-22 15:19:12",
       "fed_time": "2026-05-21 14:30:15",
       "_yield_remainder": 0.0
@@ -1309,11 +1309,11 @@
     }
   ],
   "unlocked_barns": 20,
-  "barn_total_collects": 1144,
+  "barn_total_collects": 1078,
   "unlocked_lands": 50,
   "diamond": 30,
-  "total_harvests": 349,
-  "total_earnings": 634705,
+  "total_harvests": 340,
+  "total_earnings": 470505,
   "total_processed": 1,
   "talent_tree": {
     "double_harvest": 5,
@@ -1331,37 +1331,37 @@
     "养殖新手"
   ],
   "event_active": {
-    "meteor_shower": "2026-05-23 00:15:13"
+    "meteor_shower": "2026-05-23 00:15:13",
+    "harvest_festival": "2026-05-24 18:17:27"
   },
   "inventory": {
     "crops": {
-      "小麦": 44,
+      "小麦": 27,
       "玉米": 2.0,
-      "南瓜": 160,
+      "南瓜": 130,
       "水稻": 10,
       "草莓": 1,
-      "蓝莓": 39,
+      "蓝莓": 5,
       "胡萝卜": 7,
       "棉花": 1,
       "葡萄": 10,
-      "甘蔗": 1,
-      "番茄": 23
+      "甘蔗": 1
     },
     "seeds": {},
     "products": {
-      "兔毛": 47,
-      "鸭蛋": 64,
+      "兔毛": 42,
+      "鸭蛋": 56,
       "鹅蛋": 74,
       "牛奶": 20,
-      "鸡蛋": 232,
+      "鸡蛋": 180,
       "猪肉": 4,
-      "羊毛": 32,
+      "羊毛": 31,
       "蜂蜜": 6,
       "玉米油": 1,
       "啤酒": 4
     },
     "feeds": {
-      "基础饲料": 247,
+      "基础饲料": 313,
       "精制饲料": 0,
       "高级饲料": 0,
       "特殊饲料": 0
@@ -1402,26 +1402,26 @@
   "version": "3.0",
   "_first_save_time": "2026-05-20 08:49:13",
   "_last_cycles": 27,
-  "_last_disaster_time": "2026-05-24 20:00:11",
+  "_last_disaster_time": "2026-05-24 15:24:33",
   "locked": {
     "crops": [],
     "products": [],
     "seeds": []
   },
   "seed_bag": {
-    "小麦": 25,
-    "玉米": 4,
+    "小麦": 32,
+    "玉米": 5,
     "水稻": 5,
     "玫瑰": 4,
-    "南瓜": 16,
+    "南瓜": 17,
     "胡萝卜": 8,
     "番茄": 0,
     "草莓": 1,
     "咖啡豆": 0,
     "棉花": 1,
     "甘蔗": 0,
-    "蓝莓": 1,
-    "葡萄": 9,
+    "蓝莓": 2,
+    "葡萄": 10,
     "茶叶": 1
   },
   "talent_fruits_used": 0,

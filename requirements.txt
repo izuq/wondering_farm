@@ -1,0 +1,4 @@
+# 开心农场 v3.0 - 非标准库依赖
+# 安装全部依赖：pip install -r requirements.txt
+
+Pillow>=9.0.0    # 图片缩放处理，用于在游戏中显示作物真实图片

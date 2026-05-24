@@ -1,0 +1,15 @@
+[
+  {"name": "鸡",    "level": 3,  "price": 200,   "product": "鸡蛋",   "cycle": 30,   "sell_price": 15,   "exp": 6,   "feed": {"基础饲料": 1}},
+  {"name": "鸭",    "level": 5,  "price": 300,   "product": "鸭蛋",   "cycle": 45,   "sell_price": 25,   "exp": 8,   "feed": {"基础饲料": 1}},
+  {"name": "兔",    "level": 8,  "price": 400,   "product": "兔毛",   "cycle": 60,   "sell_price": 35,   "exp": 10,  "feed": {"基础饲料": 1}},
+  {"name": "鹅",    "level": 10, "price": 500,   "product": "鹅蛋",   "cycle": 90,   "sell_price": 45,   "exp": 12,  "feed": {"精制饲料": 1}},
+  {"name": "羊",    "level": 12, "price": 800,   "product": "羊毛",   "cycle": 120,  "sell_price": 60,   "exp": 15,  "feed": {"精制饲料": 1}},
+  {"name": "猪",    "level": 15, "price": 1200,  "product": "猪肉",   "cycle": 150,  "sell_price": 100,  "exp": 20,  "feed": {"精制饲料": 2}},
+  {"name": "牛",    "level": 18, "price": 2000,  "product": "牛奶",   "cycle": 180,  "sell_price": 80,   "exp": 18,  "feed": {"精制饲料": 2}},
+  {"name": "蜜蜂",  "level": 20, "price": 3000,  "product": "蜂蜜",   "cycle": 200,  "sell_price": 120,  "exp": 25,  "feed": {"精制饲料": 2}},
+  {"name": "羊驼",  "level": 25, "price": 5000,  "product": "羊驼毛", "cycle": 240,  "sell_price": 250,  "exp": 35,  "feed": {"高级饲料": 1}},
+  {"name": "马",    "level": 30, "price": 8000,  "product": "马鬃",   "cycle": 360,  "sell_price": 400,  "exp": 50,  "feed": {"高级饲料": 1}},
+  {"name": "鹿",    "level": 40, "price": 15000, "product": "鹿茸",  "cycle": 480,  "sell_price": 800,  "exp": 200, "feed": {"特殊饲料": 1}},
+  {"name": "独角兽","level": 45, "price": 25000, "product": "独角",  "cycle": 600,  "sell_price": 1500, "exp": 400, "feed": {"特殊饲料": 1}, "hidden": true},
+  {"name": "龙",    "level": 50, "price": 50000, "product": "龙鳞",  "cycle": 720,  "sell_price": 3000, "exp": 800, "feed": {"特殊饲料": 2}, "hidden": true}
+]

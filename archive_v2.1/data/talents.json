@@ -1,0 +1,16 @@
+[
+  {"id": 1,  "group": "种植系", "name": "seed_discount",  "title": "种子折扣",   "max_lv": 5, "desc": "种子折扣 +3%/级", "effect_per_lv": 0.03},
+  {"id": 2,  "group": "种植系", "name": "grow_speed",     "title": "加速生长",   "max_lv": 5, "desc": "加速生长 +5%/级", "effect_per_lv": 0.05},
+  {"id": 3,  "group": "种植系", "name": "double_harvest", "title": "双倍收获",   "max_lv": 5, "desc": "双倍收获 +2%/级", "effect_per_lv": 0.02},
+  {"id": 4,  "group": "种植系", "name": "yield_bonus",    "title": "产量加成",   "max_lv": 5, "desc": "产量加成 +5%/级", "effect_per_lv": 0.05},
+  {"id": 5,  "group": "经营系", "name": "sell_bonus",     "title": "售价加成",   "max_lv": 5, "desc": "售价加成 +3%/级", "effect_per_lv": 0.03},
+  {"id": 6,  "group": "经营系", "name": "save_materials", "title": "节省原料",   "max_lv": 3, "desc": "节省原料 0.5/级", "effect_per_lv": 0.5},
+  {"id": 7,  "group": "经营系", "name": "process_speed",  "title": "加工加速",   "max_lv": 5, "desc": "加工加速 +5%/级", "effect_per_lv": 0.05},
+  {"id": 8,  "group": "经营系", "name": "double_process", "title": "双倍加工",   "max_lv": 5, "desc": "双倍加工 +3%/级", "effect_per_lv": 0.03},
+  {"id": 9,  "group": "经营系", "name": "offline_bonus",  "title": "离线收益",   "max_lv": 5, "desc": "离线收益 +10%/级", "effect_per_lv": 0.10},
+  {"id": 10, "group": "养殖系", "name": "animal_discount","title": "动物折扣",   "max_lv": 5, "desc": "动物折扣 +3%/级", "effect_per_lv": 0.03},
+  {"id": 11, "group": "养殖系", "name": "animal_speed",   "title": "养殖加速",   "max_lv": 5, "desc": "养殖加速 +5%/级", "effect_per_lv": 0.05},
+  {"id": 12, "group": "养殖系", "name": "animal_price",   "title": "产品加成",   "max_lv": 5, "desc": "产品加成 +5%/级", "effect_per_lv": 0.05},
+  {"id": 13, "group": "养殖系", "name": "double_animal",  "title": "双倍产出",   "max_lv": 5, "desc": "双倍产出 +3%/级", "effect_per_lv": 0.03},
+  {"id": 14, "group": "种植系", "name": "study_bonus",   "title": "勤学苦练",   "max_lv": 5, "desc": "获得经验 +5%/级", "effect_per_lv": 0.05}
+]

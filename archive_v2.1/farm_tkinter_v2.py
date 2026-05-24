@@ -192,11 +192,10 @@ def _draw_strawberry(c, cx, cy, s=1.0):
 
 def _draw_blueberry(c, cx, cy, s=1.0):
     """蓝莓"""
-    c.create_oval(cx-12*s, cy-9*s, cx+12*s, cy+9*s, fill="#4060d0", outline="#3040b0", width=1)
-    c.create_oval(cx-7*s, cy-5*s, cx-3*s, cy-1*s, fill="#d0e0ff", outline="", width=0)
-    c.create_oval(cx+2*s, cy-3*s, cx+5*s, cy-1*s, fill="#d0e0ff", outline="", width=0)
-    c.create_oval(cx-1*s, cy-2*s, cx+2*s, cy+0*s, fill="#d0e0ff", outline="", width=0)
-    c.create_polygon(cx-4*s, cy-11*s, cx, cy-14*s, cx+4*s, cy-11*s, fill="#5a3a1c", outline="#3a2a0c", width=1)
+    c.create_oval(cx-8*s, cy-8*s, cx+8*s, cy+8*s, fill="#4060d0", outline="#3040b0", width=1)
+    c.create_oval(cx-5*s, cy-4*s, cx-2*s, cy-1*s, fill="#d0e0ff", outline="", width=0)
+    c.create_oval(cx+1*s, cy-3*s, cx+3*s, cy-1*s, fill="#d0e0ff", outline="", width=0)
+    c.create_polygon(cx-3*s, cy-9*s, cx, cy-12*s, cx+3*s, cy-9*s, fill="#5a3a1c", outline="#3a2a0c", width=1)
 
 def _draw_coffee(c, cx, cy, s=1.0):
     """咖啡豆"""
@@ -302,12 +301,7 @@ def _draw_crop_image(canvas, cx, cy, s, name):
         return False
     if name not in _crop_image_cache:
         try:
-            img = Image.open(path).convert('RGBA')
-            # 裁切透明边距
-            alpha = img.split()[-1]
-            bbox = alpha.getbbox()
-            if bbox:
-                img = img.crop(bbox)
+            img = Image.open(path)
             _crop_image_cache[name] = img
         except Exception:
             return False
@@ -325,7 +319,7 @@ def _draw_crop_image(canvas, cx, cy, s, name):
             img = img.convert('RGBA')
         r, g, b, a = img.split()
         # 用中性绿色填充透明区域（与农场 UI 协调，且不会产生黑边）
-        bg = Image.new('RGB', img.size, (160, 128, 96))
+        bg = Image.new('RGB', img.size, (90, 130, 70))
         fg = Image.new('RGB', img.size)
         fg.paste(img, (0, 0), img)
         rgb_clean = Image.composite(fg, bg, a)
@@ -375,11 +369,7 @@ def _ensure_stage_images(name):
         if not path or not os.path.exists(path):
             return
         try:
-            img_raw = Image.open(path).convert('RGBA')
-            bbox = img_raw.split()[-1].getbbox()
-            if bbox:
-                img_raw = img_raw.crop(bbox)
-            _crop_image_cache[name] = img_raw
+            _crop_image_cache[name] = Image.open(path)
         except Exception:
             return
     img = _crop_image_cache[name].convert('RGBA')
@@ -407,7 +397,7 @@ def _draw_crop_staged(canvas, cx, cy, s, name, stage, tags=None):
             new_w, new_h = int(w * scale), int(h * scale)
             if (w, h) != (new_w, new_h):
                 r, g, b, a = stage_img.split()
-                bg = Image.new('RGB', stage_img.size, (160, 128, 96))
+                bg = Image.new('RGB', stage_img.size, (90, 130, 70))
                 fg = Image.new('RGB', stage_img.size)
                 fg.paste(stage_img, (0, 0), stage_img)
                 rgb_clean = Image.composite(fg, bg, a)
@@ -1855,18 +1845,20 @@ class FarmGUIv2:
 
                 # 外框（深棕色木框）
                 _round_rect(self.land_canvas, x0, y0, x1, y1, corner_r,
-                            fill="#8b6b4a", outline="", width=0, tags=(tag,))
+                            fill="#5a3a1c", outline="", width=0, tags=(tag,))
                 # 内层土壤
                 pad_soil = 3
                 soil_corner = max(2, corner_r - 2)
                 _round_rect(self.land_canvas, x0+pad_soil, y0+pad_soil, x1-pad_soil, y1-pad_soil, soil_corner,
-                            fill="#a08060", outline="", width=0, tags=(tag,))
+                            fill="#6b4a2a", outline="", width=0, tags=(tag,))
 
                 # ---- 空地 ----
                 if not land["crop"]:
-                    icon_s = int(min(cell_w, cell_h) * 0.33)
+                    icon_s = int(min(cell_w, cell_h) * 0.22)
                     self.land_canvas.create_text(cx, cy_ - 2, text="🌱",
                                                  font=("Microsoft YaHei", icon_s), tags=(tag,))
+                    self.land_canvas.create_text(cx, y0 + pad_soil + 1, text=f"#{lid}",
+                                                 font=ft_small, fill="#bba88a", anchor="n", tags=(tag,))
                 else:
                     # ---- 有作物 ----
                     pt = parse_dt(land["plant_time"])
@@ -1890,8 +1882,20 @@ class FarmGUIv2:
                                     x1-pad_soil+1, y1-pad_soil+1, soil_corner+1,
                                     fill="", outline="#5a8a3c", width=1, tags=(tag,))
 
-                    # 作物图标（按生长阶段，1.5倍）
-                    size = min(cell_w, cell_h) * 0.975
+                    # 编号（土壤色小字）
+                    self.land_canvas.create_text(cx, y0 + pad_soil + 1, text=f"#{lid}",
+                                                 font=ft_small, fill="#bba88a", anchor="n", tags=(tag,))
+
+                    # 等级（金色星标，右上角）
+                    lv_stars = "★" * min(lv_show, 3)
+                    if lv_stars:
+                        self.land_canvas.create_text(x1 - pad_soil - 2, y0 + pad_soil + 1,
+                                                     text=lv_stars,
+                                                     font=("Microsoft YaHei", max(5, int(font_s)-5)),
+                                                     fill="#d4a030", anchor="ne", tags=(tag,))
+
+                    # 作物图标（按生长阶段）
+                    size = min(cell_w, cell_h) * 0.65
                     s = size / 32
                     draw_name = "金色南瓜" if is_golden else name
                     cy_crop = cy_ - (1 if stage >= 2 else 2)
@@ -1902,20 +1906,16 @@ class FarmGUIv2:
                             s_stage = s * _STAGE_SCALES[stage]
                             draw_func(self.land_canvas, cx, cy_crop, s_stage if stage < 3 else s)
 
-                    # 成熟时间（右上角小字）
-                    if not is_ready:
-                        m, sec = int(remain), int((remain - int(remain)) * 60)
-                        ft_time = ("Microsoft YaHei", max(5, int(font_s) - 6))
-                        self.land_canvas.create_text(x1 - pad_soil - 2, y0 + pad_soil + 1,
-                                                     text=f"{m}:{sec:02d}",
-                                                     font=ft_time, fill="#bba88a", anchor="ne", tags=(tag,))
-
                     # 底部状态
                     if is_ready:
                         self.land_canvas.create_text(cx, y1 - pad_soil - 2, text="✨" if is_golden else "✓",
                                                      font=ft2,
                                                      fill="#d4a030" if is_golden else "#4a9e5f",
                                                      anchor="s", tags=(tag,))
+                    else:
+                        m, sec = int(remain), int((remain - int(remain)) * 60)
+                        self.land_canvas.create_text(cx, y1 - pad_soil - 2, text=f"{m}:{sec:02d}",
+                                                     font=ft_small, fill="#bba88a", anchor="s", tags=(tag,))
 
         # 工具提示事件绑定
         self.land_canvas.bind("<Motion>", self._on_land_hover)
