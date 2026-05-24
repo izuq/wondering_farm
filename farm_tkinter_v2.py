@@ -349,7 +349,7 @@ def _draw_crop_image(canvas, cx, cy, s, name):
 
 # ============ 生长阶段支持 ============
 # 生长阶段：0=幼苗, 1=生长期, 2=近成熟, 3=已成熟
-_STAGE_SCALES = [0.35, 0.55, 0.80, 1.0]
+_STAGE_SCALES = [0.50, 0.65, 0.85, 1.0]
 
 def _calc_stage(remain, growth_total):
     if remain <= 0:
