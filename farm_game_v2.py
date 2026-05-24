@@ -1530,11 +1530,162 @@ def check_baby_mature(data):
 
 # ============ 增强版离线计算 ============
 
+def calc_offline_crops_v2(data):
+    """增强版离线作物计算（含土地升级、天赋加速、暴风延时的实际生长时间）
+    返回 (gold, exp, count)"""
+    crops = load_crops()
+    try:
+        last = parse_dt(data["last_save_time"])
+    except (ValueError, TypeError):
+        return 0, 0, 0
+    now = now_dt()
+    elapsed = (now - last).total_seconds() / 60.0
+    if elapsed <= 0:
+        return 0, 0, 0
+
+    gold, exp, count = 0, 0, 0
+    talent_tree = data.get("talent_tree", {})
+    season = get_season(data)[0]
+
+    for land in data["lands"][:data.get("unlocked_lands", INITIAL_LANDS)]:
+        if not land.get("crop") or not land.get("plant_time"):
+            continue
+        c = crops.get(land["crop"])
+        if not c:
+            continue
+        try:
+            pt = parse_dt(land["plant_time"])
+        except (ValueError, TypeError):
+            continue
+
+        # 使用实际生长时间（含土地升级+天赋+暴风延时）
+        actual_growth = calc_growth_time(land["crop"], land.get("upgrade_level", 1), talent_tree, land)
+        if (now - pt).total_seconds() / 60.0 < actual_growth:
+            continue
+
+        # 计算离线期间完成的完整周期数
+        n = min(int(elapsed / actual_growth), 100)
+        if n <= 0:
+            continue
+
+        # 计算实际产量倍率（土地等级+丰收季节+天赋）
+        mult = calc_yield_multiplier(land.get("upgrade_level", 1), talent_tree, land["crop"], season)
+
+        # 逐周期累积产量（使用累积余数机制避免小数损失）
+        total_qty = 0
+        for _ in range(n):
+            total_qty += calc_harvest_yield(land, 1.0, mult)
+
+        gold += int(c["sell_price"] * total_qty)
+        exp += c["exp"] * n
+        count += n
+
+        # 更新种植时间到最后一个完成的周期结束
+        land["plant_time"] = (
+            pt + datetime.timedelta(minutes=actual_growth * n)
+        ).strftime("%Y-%m-%d %H:%M:%S")
+
+    if count > 0:
+        data["gold"] = data.get("gold", 0) + gold
+        data["exp"] = data.get("exp", 0) + exp
+        try_level_up(data)
+
+    return gold, exp, count
+
+
+def calc_offline_agro_v2(data):
+    """离线农业建筑处理（处理离线期间完成的多批加工），返回 (total_produced, total_batches)"""
+    now = now_dt()
+    try:
+        last = parse_dt(data["last_save_time"])
+    except (ValueError, TypeError):
+        return 0, 0
+    elapsed = (now - last).total_seconds() / 60.0
+    if elapsed <= 0:
+        return 0, 0
+
+    total_produced = 0
+    total_batches = 0
+
+    for slot in data.get("agro_buildings", [])[:data.get("unlocked_agro_buildings", INITIAL_AGRO_BUILDINGS)]:
+        if not slot.get("building") or not slot.get("order"):
+            continue
+        if not slot.get("start_time"):
+            continue
+
+        all_recipes = get_recipe_list(slot.get("building", "feed_mill"))
+        recipe = next((r for r in all_recipes if r["name"] == slot["order"]), None)
+        if not recipe:
+            continue
+
+        done = slot.get("done_batches", 0)
+        total = slot.get("total_batches", 0)
+        if done >= total:
+            continue
+
+        batch_time = recipe["time"]
+
+        # 从 start_time 到现在经过了多少分钟
+        st = parse_dd(slot["start_time"])
+        elapsed_from_start = (now - st).total_seconds() / 60.0
+
+        # 理论上能完成的批次数
+        possible = int(elapsed_from_start / batch_time)
+        possible = possible - done  # 扣除已完成的
+        if possible <= 0:
+            continue
+        possible = min(possible, total - done)
+
+        # 逐批消耗原料进行加工
+        processed = 0
+        dest = data["inventory"].setdefault("products", {}) if slot["building"] == "brewery" else _feed_inv(data)
+
+        for _ in range(possible):
+            if _consume_recipe_ingredients(data, recipe):
+                done += 1
+                processed += 1
+            else:
+                break  # 原料不足，停止后续批次
+
+        if processed == 0:
+            continue
+
+        # 产出计算
+        produced = recipe["yield"] * processed
+        dest[recipe["name"]] = dest.get(recipe["name"], 0) + produced
+        slot["done_batches"] = done
+
+        if done >= total:
+            slot["order"] = None
+            slot["total_batches"] = 0
+            slot["done_batches"] = 0
+            slot["ready"] = False
+            slot["start_time"] = None
+        else:
+            # 更新 start_time 到最后一个完成批次的结束时间
+            slot["start_time"] = (st + datetime.timedelta(minutes=batch_time * done)).strftime("%Y-%m-%d %H:%M:%S")
+            slot["ready"] = False
+
+        total_produced += produced
+        total_batches += processed
+
+    return total_produced, total_batches
+
+
 def calc_offline_v2(data):
-    """增强版离线收益（含养殖场），返回 (gold, exp, total_count)"""
-    crops_game = load_crops()
-    gold, exp, count = calc_offline(data, crops_game)
+    """增强版离线收益（含养殖场+农业建筑+工厂），返回 (gold, exp, total_count)"""
+    # 1. 工厂加工状态离线检测
+    check_factories_ready(data)
+
+    # 2. 作物离线计算（使用实际生长时间）
+    gold, exp, count = calc_offline_crops_v2(data)
+
+    # 3. 养殖场离线计算
     items, barn_exp = calc_barn_offline(data)
+
+    # 4. 农业建筑离线计算（饲料/酿酒多批次加工）
+    agro_produced, agro_batches = calc_offline_agro_v2(data)
+
     exp_bonus = apply_exp_bonus(data)
     exp = int(exp * exp_bonus)
 
@@ -1543,10 +1694,12 @@ def calc_offline_v2(data):
         parts.append(f"作物收获 {count} 次，获得 {gold}💰 {exp}✨")
     if items > 0:
         parts.append(f"养殖场产出 {items} 件")
+    if agro_batches > 0:
+        parts.append(f"农业建筑完成 {agro_batches} 批，产出 {agro_produced} 件")
     if parts:
         print(f"\n📦 离线收益：{'，'.join(parts)}")
         if barn_exp > 0:
-            print(f"   获得 {barn_exp}✨（含离线加成）")
+            print(f"   养殖场获得 {barn_exp}✨（含离线加成）")
 
     return gold, exp + barn_exp, count + items
 

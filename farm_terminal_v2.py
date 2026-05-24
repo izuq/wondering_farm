@@ -775,10 +775,8 @@ def main_v2():
     crops_game = load_crops()
     data = load_save_v2()
 
-    # 离线收益
-    gold, exp, count = calc_offline_v2(data)
-    if count > 0:
-        print(f"\n📦 离线 {gold}💰 {exp}✨")
+    # 离线收益（calc_offline_v2 内部会打印详细内容）
+    calc_offline_v2(data)
     check_achievements(data)
     print("\n💡 按任意键进入游戏...")
     pause()

@@ -27,6 +27,7 @@ from farm_game_v2 import (
     check_achievements, check_baby_mature,
     # Barn functions
     load_save_v2, write_save_v2, calc_barn_offline,
+    calc_offline_crops_v2, calc_offline_agro_v2,
     get_barn_animal, get_age_stage, can_barn_produce, check_feed_available,
     process_barn_production, collect_all_barns,
     barn_upgrade_cost, barn_upgrade_effects, barn_yield_multiplier, double_barn_chance,
@@ -504,13 +505,30 @@ class FarmGUIv2:
     # ==================== 离线计算 ====================
 
     def _calc_offline_v2(self):
-        """增强离线收益（含养殖场）"""
-        # 作物离线计算
-        calc_offline(self.data, self.crops)
-        # 养殖场离线计算
-        items, exp = calc_barn_offline(self.data)
+        """增强离线收益（含养殖场+农业建筑+工厂）"""
+        # 1. 工厂加工状态离线检测
+        check_factories_ready(self.data)
+
+        # 2. 作物离线计算（含土地升级+天赋加速+暴风延时）
+        gold, exp, count = calc_offline_crops_v2(self.data)
+
+        # 3. 养殖场离线计算
+        items, barn_exp = calc_barn_offline(self.data)
+
+        # 4. 农业建筑离线计算（饲料/酿酒多批次加工）
+        agro_produced, agro_batches = calc_offline_agro_v2(self.data)
+
+        parts = []
+        if count > 0:
+            parts.append(f"作物收获 {count} 次，获得 {gold}💰")
         if items > 0:
-            self._log(f"📦 离线养殖场产出 {items} 件，{exp}✨")
+            parts.append(f"养殖场产出 {items} 件")
+        if agro_batches > 0:
+            parts.append(f"农业建筑完成 {agro_batches} 批，产出 {agro_produced} 件")
+        if parts:
+            self._log(f"📦 离线收益：{'，'.join(parts)}")
+            if barn_exp > 0:
+                self._log(f"   养殖场获得 {barn_exp}✨（含离线加成）")
 
     # ==================== 界面构建 ====================
 
