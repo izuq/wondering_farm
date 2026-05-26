@@ -12,7 +12,6 @@ import threading
 import sys
 import io
 import os
-from PIL import Image, ImageTk
 
 # ============ 从 farm_game_v2 导入所有逻辑（包含 barn 模块） ============
 from farm_game_v2 import (
@@ -286,67 +285,6 @@ CROP_DRAW_FUNCS = {
     "黄金小麦": _draw_golden_wheat, "彩虹花": _draw_rainbow_flower,
 }
 
-# ============ 作物真实图片映射（优先于绘制函数） ============
-CROP_IMAGE_MAP = {
-    "小麦": os.path.join(os.path.dirname(os.path.abspath(__file__)), "pictures", "小麦.png"),
-    "番茄": os.path.join(os.path.dirname(os.path.abspath(__file__)), "pictures", "番茄.png"),
-    "南瓜": os.path.join(os.path.dirname(os.path.abspath(__file__)), "pictures", "南瓜.png"),
-    "蓝莓": os.path.join(os.path.dirname(os.path.abspath(__file__)), "pictures", "蓝莓.png"),
-}
-_crop_image_cache = {}
-
-def _draw_crop_image(canvas, cx, cy, s, name):
-    """用真实图片绘制作物（PIL 缩放），成功返回 True，失败返回 False"""
-    path = CROP_IMAGE_MAP.get(name)
-    if not path:
-        return False
-    if name not in _crop_image_cache:
-        try:
-            img = Image.open(path).convert('RGBA')
-            # 裁切透明边距
-            alpha = img.split()[-1]
-            bbox = alpha.getbbox()
-            if bbox:
-                img = img.crop(bbox)
-            _crop_image_cache[name] = img
-        except Exception:
-            return False
-    img = _crop_image_cache[name]
-
-    target_size = max(4, int(32 * s))
-    w, h = img.width, img.height
-    scale = min(target_size / w, target_size / h)
-    new_w, new_h = int(w * scale), int(h * scale)
-
-    if (w, h) != (new_w, new_h):
-        # 为避免 LANCZOS 缩放 RGBA 时透明黑底产生脏边，
-        # 先把透明区域填充为中性绿色，再分别缩放 RGB 和 Alpha。
-        if img.mode != 'RGBA':
-            img = img.convert('RGBA')
-        r, g, b, a = img.split()
-        # 用中性绿色填充透明区域（与农场 UI 协调，且不会产生黑边）
-        bg = Image.new('RGB', img.size, (160, 128, 96))
-        fg = Image.new('RGB', img.size)
-        fg.paste(img, (0, 0), img)
-        rgb_clean = Image.composite(fg, bg, a)
-        # 分别缩放
-        rgb_resized = rgb_clean.resize((new_w, new_h), Image.LANCZOS)
-        a_resized = a.resize((new_w, new_h), Image.LANCZOS)
-        resized = Image.merge('RGBA', (*rgb_resized.split(), a_resized))
-        photo = ImageTk.PhotoImage(resized)
-    else:
-        if img.mode != 'RGBA':
-            img = img.convert('RGBA')
-        photo = ImageTk.PhotoImage(img)
-
-    # 保持引用（tkinter 要求 PhotoImage 必须存活）
-    if not hasattr(canvas, '_img_refs'):
-        canvas._img_refs = []
-    canvas._img_refs.append(photo)
-    canvas.create_image(cx, cy, image=photo)
-    return True
-
-
 # ============ 生长阶段支持 ============
 # 生长阶段：0=幼苗, 1=生长期, 2=近成熟, 3=已成熟
 _STAGE_SCALES = [0.50, 0.65, 0.85, 1.0]
@@ -362,71 +300,10 @@ def _calc_stage(remain, growth_total):
     else:
         return 2
 
-# 为图像作物预生成阶段 tint 版本
-_crop_stage_cache = {}  # {name: {stage: PIL Image at original res}}
-
-def _ensure_stage_images(name):
-    """为图像作物预生成各阶段染色图（原始分辨率），按需加载图片"""
-    if name in _crop_stage_cache:
-        return
-    # 如果图片尚未加载，从磁盘读取
-    if name not in _crop_image_cache:
-        path = CROP_IMAGE_MAP.get(name)
-        if not path or not os.path.exists(path):
-            return
-        try:
-            img_raw = Image.open(path).convert('RGBA')
-            bbox = img_raw.split()[-1].getbbox()
-            if bbox:
-                img_raw = img_raw.crop(bbox)
-            _crop_image_cache[name] = img_raw
-        except Exception:
-            return
-    img = _crop_image_cache[name].convert('RGBA')
-    _crop_stage_cache[name] = {}
-    for stage in [0, 1]:
-        tint = Image.new('RGBA', img.size, (60, 180, 60, 90 if stage == 0 else 50))
-        stage_img = Image.alpha_composite(img.copy(), tint)
-        _crop_stage_cache[name][stage] = stage_img
-    _crop_stage_cache[name][2] = img
-
 def _draw_crop_staged(canvas, cx, cy, s, name, stage, tags=None):
-    """按生长阶段绘制作物, stage=0-3"""
+    """按生长阶段绘制作物, stage=0-3，纯 canvas 绘图"""
     stage = min(max(stage, 0), 3)
     stage_scale = _STAGE_SCALES[stage]
-    s_stage = s * stage_scale
-
-    if name in CROP_IMAGE_MAP:
-        _ensure_stage_images(name)
-        stage_cache = _crop_stage_cache.get(name)
-        if stage_cache is not None:
-            stage_img = stage_cache.get(stage) or _crop_image_cache[name].convert('RGBA')
-            target_size = max(4, int(32 * s_stage))
-            w, h = stage_img.width, stage_img.height
-            scale = min(target_size / w, target_size / h)
-            new_w, new_h = int(w * scale), int(h * scale)
-            if (w, h) != (new_w, new_h):
-                r, g, b, a = stage_img.split()
-                bg = Image.new('RGB', stage_img.size, (160, 128, 96))
-                fg = Image.new('RGB', stage_img.size)
-                fg.paste(stage_img, (0, 0), stage_img)
-                rgb_clean = Image.composite(fg, bg, a)
-                rgb_resized = rgb_clean.resize((new_w, new_h), Image.LANCZOS)
-                a_resized = a.resize((new_w, new_h), Image.LANCZOS)
-                resized = Image.merge('RGBA', (*rgb_resized.split(), a_resized))
-                photo = ImageTk.PhotoImage(resized)
-            else:
-                photo = ImageTk.PhotoImage(stage_img)
-            if not hasattr(canvas, '_img_refs'):
-                canvas._img_refs = []
-            canvas._img_refs.append(photo)
-            kw = {"image": photo}
-            if tags:
-                kw["tags"] = tags
-            canvas.create_image(cx, cy, **kw)
-            return True
-
-    # 回退到绘制函数（支持阶段缩放）
     if stage == 0:
         _draw_sprout(canvas, cx, cy, s, tags=tags)
         return True
@@ -705,6 +582,16 @@ class FarmGUIv2:
         except Exception:
             pass
 
+    # ==================== 多页地块辅助 ====================
+
+    def _get_active_lands(self):
+        """返回当前激活的地块页面的 lands 列表"""
+        return self.data["lands_page2"] if self.data.get("active_land_page", 0) == 1 else self.data["lands"]
+
+    def _get_active_unlocked(self):
+        """返回当前激活的地块页面的已解锁数量"""
+        return self.data.get("unlocked_lands_page2", 6) if self.data.get("active_land_page", 0) == 1 else self.data.get("unlocked_lands", 6)
+
     # ==================== 离线计算 ====================
 
     def _calc_offline_v2(self):
@@ -841,6 +728,19 @@ class FarmGUIv2:
 
         tk.Label(grid_container, text="🌱 土地状况", font=F["title"],
                  bg=COLORS["bg"], anchor="w").pack(fill="x")
+
+        # 地块1/地块2 切换按钮（土地状况下面的行）
+        self._land_page_btns = {}
+        page_btn_frame = tk.Frame(grid_container, bg=COLORS["bg"])
+        page_btn_frame.pack(fill="x", pady=(0, 2))
+        for pid, ptext in [(0, "地块1"), (1, "地块2")]:
+            btn = tk.Button(page_btn_frame, text=ptext, font=F["button"],
+                            command=lambda p=pid: self._switch_land_page(p),
+                            relief="sunken" if pid == 0 else "raised",
+                            bd=1, padx=8, pady=0,
+                            bg="#d0e8ff" if pid == 0 else COLORS["btn_bg"])
+            btn.pack(side="left", padx=1)
+            self._land_page_btns[pid] = btn
 
         self.land_frame = tk.Frame(grid_container, bg=COLORS["bg"])
         self.land_frame.pack(fill="both", expand=True, pady=2)
@@ -1108,10 +1008,10 @@ class FarmGUIv2:
                 x1, y1 = x0 + cell_w, y0 + cell_h
                 cx, cy_ = (x0 + x1) / 2, (y0 + y1) / 2
 
-                font_s = max(6, min(cell_w, cell_h) / 8.5)
+                font_s = max(7, min(cell_w, cell_h) / 6)
                 ft = ("Microsoft YaHei", int(font_s))
-                ft2 = ("Microsoft YaHei", max(6, int(font_s) - 1))
-                ft3 = ("Microsoft YaHei", max(5, int(font_s) - 2))
+                ft2 = ("Microsoft YaHei", max(7, int(font_s) - 2))
+                ft3 = ("Microsoft YaHei", max(6, int(font_s) - 4))
 
                 if sid > unlocked:
                     self.agro_canvas.create_rectangle(x0, y0, x1, y1, fill="#ddd", outline="#ccc", width=1)
@@ -1147,7 +1047,8 @@ class FarmGUIv2:
                         all_recipes = get_recipe_list(btype)
                         if slot.get("ready"):
                             bg_c, border = COLORS["land_ready"], "#90c090"
-                            status_text = f"✅ {done}/{total}批"
+                            status_text = order_name
+                            bottom_text = f"✅ {done}/{total}批"
                         else:
                             recipe = next((r for r in all_recipes if r["name"] == order_name), None)
                             if recipe and slot.get("start_time"):
@@ -1155,27 +1056,26 @@ class FarmGUIv2:
                                 remain = recipe["time"] - (now_dt() - st).total_seconds() / 60.0
                                 if remain > 0:
                                     m, sec = int(remain), int((remain - int(remain)) * 60)
-                                    status_text = f"{order_name} {m}:{sec:02d}"
+                                    bottom_text = f"{m}:{sec:02d}"
                                 else:
-                                    status_text = f"{order_name} {done}/{total}批"
+                                    bottom_text = f"{done}/{total}批"
                             else:
-                                status_text = f"{order_name} {done}/{total}批"
+                                bottom_text = f"{done}/{total}批"
+                            status_text = order_name
                             bg_c, border = COLORS["land_growing"], "#d0c080"
-                        # 加工中只在下方显示当前订单名
-                        sub_text = order_name
                     else:
                         bg_c, border = idle_bg, idle_border
                         status_text = "⬜ 空闲"
-                        sub_text = ""
+                        bottom_text = ""
 
                     self.agro_canvas.create_rectangle(x0, y0, x1, y1, fill=bg_c, outline=border, width=1)
-                    # 顶部：编号 + 建筑名 + 等级
-                    self.agro_canvas.create_text(cx, y0 + 4, text=f"#{sid} {name} Lv.{lv}", font=ft3, fill="#333", anchor="n")
-                    # 中间：状态
+                    # 顶部：建筑名
+                    self.agro_canvas.create_text(cx, y0 + 4, text=name, font=ft3, fill="#333", anchor="n")
+                    # 中间：加工物名称（或"空闲"）
                     self.agro_canvas.create_text(cx, cy_, text=status_text, font=ft2, fill="#333")
-                    # 底部：仅在加工时显示订单名
-                    if sub_text:
-                        self.agro_canvas.create_text(cx, y1 - 4, text=sub_text, font=ft3, fill="#555", anchor="s")
+                    # 底部：时间（仿养殖场风格）
+                    if bottom_text:
+                        self.agro_canvas.create_text(cx, y1 - 4, text=bottom_text, font=ft2, fill="#333", anchor="s")
 
         # 更新状态栏
         self._update_agro_status()
@@ -1719,6 +1619,16 @@ class FarmGUIv2:
             self.agro_container.pack(fill="both", expand=True)
             self._update_agro_grid()
 
+    def _switch_land_page(self, page):
+        """切换地块1/地块2"""
+        self.data["active_land_page"] = page
+        for pid, btn in self._land_page_btns.items():
+            active = pid == page
+            btn.config(relief="sunken" if active else "raised",
+                       bg="#d0e8ff" if active else COLORS["btn_bg"])
+        self._update_land_grid()
+        self._update_ui()
+
     # ==================== 界面更新 ====================
 
     def _schedule_refresh(self):
@@ -1744,7 +1654,9 @@ class FarmGUIv2:
             self.status_labels["exp"].config(text=f"✨ {d['exp']}/{need}")
 
             season, _ = get_season(d)
-            planted = sum(1 for l in d["lands"][:d["unlocked_lands"]] if l["crop"])
+            active_lands = self._get_active_lands()
+            active_unlocked = self._get_active_unlocked()
+            planted = sum(1 for l in active_lands[:active_unlocked] if l["crop"])
             factories_ready = sum(1 for f in FACTORY_LIST if d["factories"][f["factory"]].get("ready"))
 
             # 养殖场统计
@@ -1754,7 +1666,7 @@ class FarmGUIv2:
             feed_total = sum(d.get("inventory", {}).get("feeds", {}).values())
 
             self.status_labels["season"].config(text=f"🌸 {season}季")
-            self.status_labels["land_usage"].config(text=f"🌱 {planted}/{d['unlocked_lands']}")
+            self.status_labels["land_usage"].config(text=f"🌱 {planted}/{active_unlocked}")
             self.status_labels["barn_usage"].config(text=f"🐔 {occupied}/{unlocked_barns}")
             self.status_labels["barn_pending"].config(text=f"📦 待收:{pending}")
             self.status_labels["factories"].config(text=f"🏭 {factories_ready}")
@@ -1816,6 +1728,8 @@ class FarmGUIv2:
         if hasattr(self.land_canvas, "_img_refs"):
             self.land_canvas._img_refs.clear()
         d = self.data
+        active_lands = self._get_active_lands()
+        active_unlocked = self._get_active_unlocked()
         now = now_dt()
         season, _ = get_season(d)
         cw = self.land_canvas.winfo_width() - 2
@@ -1843,27 +1757,26 @@ class FarmGUIv2:
                 corner_r = max(3, min(cell_w, cell_h) * 0.06)
 
                 # ---- 锁定地块 ----
-                if lid > d["unlocked_lands"]:
+                if lid > active_unlocked:
                     _round_rect(self.land_canvas, x0, y0, x1, y1, corner_r,
                                 fill="#ddd", outline="#bbb", width=1, tags=(tag,))
                     self.land_canvas.create_text(cx, cy_, text=f"#{lid}\n🔒",
                                                  font=ft, fill="#999", justify="center", tags=(tag,))
                     continue
 
-                land = d["lands"][lid - 1]
+                land = active_lands[lid - 1]
                 lv_show = land.get("upgrade_level", 1)
 
-                # 外框（深棕色木框）
+                # 外框（浅色边框）
                 _round_rect(self.land_canvas, x0, y0, x1, y1, corner_r,
-                            fill="#8b6b4a", outline="", width=0, tags=(tag,))
-                # 内层土壤
-                pad_soil = 3
-                soil_corner = max(2, corner_r - 2)
-                _round_rect(self.land_canvas, x0+pad_soil, y0+pad_soil, x1-pad_soil, y1-pad_soil, soil_corner,
-                            fill="#a08060", outline="", width=0, tags=(tag,))
+                            fill="#d0d0d0", outline="", width=0, tags=(tag,))
 
                 # ---- 空地 ----
                 if not land["crop"]:
+                    pad_soil = 3
+                    soil_corner = max(2, corner_r - 2)
+                    _round_rect(self.land_canvas, x0+pad_soil, y0+pad_soil, x1-pad_soil, y1-pad_soil, soil_corner,
+                                fill=COLORS["barn_empty"], outline="", width=0, tags=(tag,))
                     icon_s = int(min(cell_w, cell_h) * 0.33)
                     self.land_canvas.create_text(cx, cy_ - 2, text="🌱",
                                                  font=("Microsoft YaHei", icon_s), tags=(tag,))
@@ -1878,6 +1791,13 @@ class FarmGUIv2:
                     is_golden = land.get("golden_pumpkin", False)
                     is_ready = remain <= 0
                     stage = _calc_stage(remain, growth_total)
+
+                    # 内层背景色（按状态）
+                    pad_soil = 3
+                    soil_corner = max(2, corner_r - 2)
+                    _round_rect(self.land_canvas, x0+pad_soil, y0+pad_soil, x1-pad_soil, y1-pad_soil, soil_corner,
+                                fill=COLORS["land_ready"] if is_ready else COLORS["land_growing"],
+                                outline="", width=0, tags=(tag,))
 
                     # 状态边框
                     if is_ready:
@@ -1902,20 +1822,16 @@ class FarmGUIv2:
                             s_stage = s * _STAGE_SCALES[stage]
                             draw_func(self.land_canvas, cx, cy_crop, s_stage if stage < 3 else s)
 
-                    # 成熟时间（右上角小字）
-                    if not is_ready:
-                        m, sec = int(remain), int((remain - int(remain)) * 60)
-                        ft_time = ("Microsoft YaHei", max(5, int(font_s) - 6))
-                        self.land_canvas.create_text(x1 - pad_soil - 2, y0 + pad_soil + 1,
-                                                     text=f"{m}:{sec:02d}",
-                                                     font=ft_time, fill="#bba88a", anchor="ne", tags=(tag,))
-
-                    # 底部状态
+                    # 底部状态（仿养殖场风格）
                     if is_ready:
-                        self.land_canvas.create_text(cx, y1 - pad_soil - 2, text="✨" if is_golden else "✓",
+                        self.land_canvas.create_text(cx, y1 - 4, text="✨" if is_golden else "✓",
                                                      font=ft2,
                                                      fill="#d4a030" if is_golden else "#4a9e5f",
                                                      anchor="s", tags=(tag,))
+                    else:
+                        m, sec = int(remain), int((remain - int(remain)) * 60)
+                        self.land_canvas.create_text(cx, y1 - 4, text=f"{m}:{sec:02d}",
+                                                     font=ft2, fill="#333", anchor="s", tags=(tag,))
 
         # 工具提示事件绑定
         self.land_canvas.bind("<Motion>", self._on_land_hover)
@@ -1938,11 +1854,11 @@ class FarmGUIv2:
             self._hide_land_tip()
             return
         lid = r * cols + c + 1
-        if lid < 1 or lid > len(self.data.get("lands", [])):
+        if lid < 1 or lid > len(self._get_active_lands()):
             self._hide_land_tip()
             return
         # 锁定地块不显示
-        if lid > self.data.get("unlocked_lands", 0):
+        if lid > self._get_active_unlocked():
             self._hide_land_tip()
             return
         # 取消未执行的延迟显示
@@ -1957,7 +1873,7 @@ class FarmGUIv2:
     def _show_land_tip(self, rx, ry, lid):
         """显示悬浮信息窗"""
         self._hide_land_tip()
-        land = self.data["lands"][lid - 1]
+        land = self._get_active_lands()[lid - 1]
         lines = [f" 第{lid}号地块 "]
         if land.get("crop"):
             name = land["crop"]
@@ -2062,7 +1978,6 @@ class FarmGUIv2:
                     self.barn_canvas.create_rectangle(x0, y0, x1, y1, fill=bg_c, outline=border, width=1)
 
                     # 编号 + 等级
-                    self.barn_canvas.create_text(cx, y0 + 4, text=f"#{bid} Lv.{lv}", font=ft2, fill="#333", anchor="n")
 
                     # 动物图标
                     size = min(cell_w, cell_h) * 0.55
@@ -2151,7 +2066,9 @@ class FarmGUIv2:
         d = self.data
         now = now_dt()
         triggered = False
-        for land in d["lands"][:d["unlocked_lands"]]:
+        active_lands = self._get_active_lands()
+        active_unlocked = self._get_active_unlocked()
+        for land in active_lands[:active_unlocked]:
             if land.get("crop") != "南瓜":
                 continue
             # 已判定过（变金或不变），不再处理
@@ -2166,9 +2083,9 @@ class FarmGUIv2:
             growth = calc_growth_time("南瓜", land["upgrade_level"], d["talent_tree"])
             if (now - pt).total_seconds() / 60.0 < growth:
                 continue  # 还没成熟
-            # 首次成熟，一生一次的1%判定
+            # 首次成熟，一生一次的2%判定
             land["_maturity_roll_done"] = True
-            if random.random() < 0.01:
+            if random.random() < 0.02:
                 land["golden_pumpkin"] = True
                 land["plant_time"] = now_str()  # 重置生长计时器，再长一个周期
                 self._log("🌟 彩蛋！一块南瓜田变成了金色南瓜！再等一个生长周期即可收获！")
@@ -2182,9 +2099,9 @@ class FarmGUIv2:
         col = int(event.x / cw * 10)
         row = int(event.y / ch * 5)
         lid = row * 10 + col + 1
-        if lid > len(self.data["lands"]) or lid > self.data["unlocked_lands"]:
+        if lid > len(self._get_active_lands()) or lid > self._get_active_unlocked():
             return
-        land = self.data["lands"][lid - 1]
+        land = self._get_active_lands()[lid - 1]
         d = self.data
         is_golden = land.get("golden_pumpkin", False)
 
@@ -2271,7 +2188,7 @@ class FarmGUIv2:
 
     def _harvest_single(self, lid):
         """收获单块土地（含金色南瓜彩蛋）"""
-        land = self.data["lands"][lid - 1]
+        land = self._get_active_lands()[lid - 1]
         if not land["crop"]:
             return
         is_golden = land.get("golden_pumpkin", False)
@@ -2351,6 +2268,8 @@ class FarmGUIv2:
         buy_btn.pack(pady=(0, 10))
 
         inv = d.get("seed_bag", {})
+        plant_lands = self._get_active_lands()
+        plant_unlocked = self._get_active_unlocked()
 
         def do_plant_crop(name):
             if inv.get(name, 0) <= 0:
@@ -2360,7 +2279,7 @@ class FarmGUIv2:
             if lid is not None:
                 lands_to_plant = [lid]
             else:
-                free = [l["id"] for l in d["lands"][:d["unlocked_lands"]] if not l["crop"]]
+                free = [l["id"] for l in plant_lands[:plant_unlocked] if not l["crop"]]
                 if not free:
                     messagebox.showinfo("提示", "没有空闲土地")
                     return
@@ -2379,7 +2298,7 @@ class FarmGUIv2:
             for plot_id in lands_to_plant:
                 if inv.get(name, 0) <= 0:
                     break
-                plot = d["lands"][plot_id - 1]
+                plot = plant_lands[plot_id - 1]
                 if plot["crop"]:
                     continue
                 inv[name] -= 1
@@ -2563,7 +2482,9 @@ class FarmGUIv2:
         total_qty = 0
         total_exp = 0
 
-        for land in d["lands"][:d["unlocked_lands"]]:
+        active_lands = self._get_active_lands()
+        active_unlocked = self._get_active_unlocked()
+        for land in active_lands[:active_unlocked]:
             # 金色南瓜必须跳过
             if land.get("golden_pumpkin"):
                 continue
@@ -2777,6 +2698,74 @@ class FarmGUIv2:
 
         _rebuild_seed_buttons()
         _rebuild_animal_buttons()
+
+        # ---- 饲料商店标签页 ----
+        feed_frame = tk.Frame(notebook, bg=COLORS["bg"])
+        notebook.add(feed_frame, text="🍽️ 饲料")
+
+        # 饲料定价：直接购买比自行加工贵，但喂养后产出仍有利可图
+        FEED_SHOP_PRICES = {
+            "基础饲料": 8,
+            "精制饲料": 35,
+            "高级饲料": 300,
+            "特殊饲料": 780,
+        }
+
+        feed_canvas = tk.Canvas(feed_frame, bg=COLORS["bg"], highlightthickness=0)
+        feed_scroll = tk.Scrollbar(feed_frame, orient="vertical", command=feed_canvas.yview)
+        feed_inner = tk.Frame(feed_canvas, bg=COLORS["bg"])
+        feed_inner.bind("<Configure>", lambda e: feed_canvas.configure(scrollregion=feed_canvas.bbox("all")))
+        feed_canvas.create_window((0, 0), window=feed_inner, anchor="nw")
+        feed_canvas.configure(yscrollcommand=feed_scroll.set)
+        feed_canvas.pack(side="left", fill="both", expand=True)
+        feed_scroll.pack(side="right", fill="y")
+
+        # 饲料说明
+        feed_info_text = (
+            "🍽️ 直接购买饲料比自行加工更贵，但省去种植加工时间\n"
+            "💰 饲料价格参考：加工成本（种子价）< 商店价 < 动物产出价"
+        )
+        tk.Label(feed_inner, text=feed_info_text, font=F["small"],
+                 bg="#fff3cd", fg="#856404", anchor="w", justify="left",
+                 padx=5, pady=3).pack(fill="x", padx=5, pady=(5, 3))
+
+        def _rebuild_feed_buttons():
+            for w in feed_inner.winfo_children():
+                if isinstance(w, tk.Frame) and hasattr(w, '_is_feed_btn_frame'):
+                    w.destroy()
+            for feed_name, price in FEED_SHOP_PRICES.items():
+                can = d["gold"] >= price
+                inv_count = d.get("inventory", {}).get("feeds", {}).get(feed_name, 0)
+                text = f"{feed_name}  {price}💰/份  库存: {inv_count}  {'✅' if can else '❌'}"
+
+                def buy_feed(name=feed_name, p=price):
+                    qty = self._quantity_dialog(f"购买 {name}", parent=dialog, unit_price=p, gold=d["gold"])
+                    if not qty:
+                        return
+                    cost = p * qty
+                    if d["gold"] < cost:
+                        messagebox.showwarning("金币不足", f"需要 {cost}💰")
+                        return
+                    d["gold"] -= cost
+                    feed_inv = d.setdefault("inventory", {}).setdefault("feeds", {})
+                    feed_inv[name] = feed_inv.get(name, 0) + qty
+                    self._log(f"🛒 购买 {name}×{qty}，花费 {cost}💰")
+                    _refresh_shop_gold()
+                    _rebuild_feed_buttons()
+
+                btn_frame = tk.Frame(feed_inner, bg=COLORS["bg"])
+                btn_frame._is_feed_btn_frame = True
+                btn_frame.pack(fill="x", padx=5, pady=2)
+
+                btn = tk.Button(btn_frame, text=text, font=F["small"],
+                                anchor="w", padx=5,
+                                command=buy_feed if can else None,
+                                bg="#fff" if can else "#eee",
+                                state="normal" if can else "disabled",
+                                relief="groove", bd=1)
+                btn.pack(fill="x")
+
+        _rebuild_feed_buttons()
 
         dialog.wait_window()
 
@@ -3247,7 +3236,9 @@ class FarmGUIv2:
         canvas.pack(side="left", fill="both", expand=True)
         scrollbar.pack(side="right", fill="y")
 
-        for i, land in enumerate(d["lands"][:d["unlocked_lands"]], 1):
+        upgrade_lands = self._get_active_lands()
+        upgrade_unlocked = self._get_active_unlocked()
+        for i, land in enumerate(upgrade_lands[:upgrade_unlocked], 1):
             lv = land["upgrade_level"]
             if lv >= 10:
                 text = f"#{i}  [{'空' if not land['crop'] else land['crop']}]  Lv.{lv}  MAX"
@@ -3265,8 +3256,8 @@ class FarmGUIv2:
                     messagebox.showwarning("金币不足", f"需要 {c}💰")
                     return
                 d["gold"] -= c
-                d["lands"][n - 1]["upgrade_level"] += 1
-                self._log(f"⬆️ 土地 #{n} 升级到 Lv.{d['lands'][n-1]['upgrade_level']}")
+                upgrade_lands[n - 1]["upgrade_level"] += 1
+                self._log(f"⬆️ 土地 #{n} 升级到 Lv.{upgrade_lands[n-1]['upgrade_level']}")
                 dialog.destroy()
                 self._update_ui()
 
@@ -3281,10 +3272,10 @@ class FarmGUIv2:
 
     def _on_unlock_land(self):
         d = self.data
-        if d["unlocked_lands"] >= MAX_LANDS:
+        if self._get_active_unlocked() >= MAX_LANDS:
             messagebox.showinfo("提示", "所有土地已解锁！")
             return
-        next_id = d["unlocked_lands"] + 1
+        next_id = self._get_active_unlocked() + 1
         cost = 200 * next_id
         req_level = (next_id - 1) // 5 + 1
         if d["level"] < req_level:
@@ -3295,7 +3286,10 @@ class FarmGUIv2:
             return
         if messagebox.askyesno("解锁土地", f"解锁第 {next_id} 号土地？\n消耗 {cost}💰"):
             d["gold"] -= cost
-            d["unlocked_lands"] = next_id
+            if d.get("active_land_page", 0) == 1:
+                d["unlocked_lands_page2"] = next_id
+            else:
+                d["unlocked_lands"] = next_id
             self._log(f"🔓 解锁第 {next_id} 号土地")
             self._update_ui()
 

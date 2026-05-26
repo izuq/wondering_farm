@@ -124,22 +124,17 @@ def get_event_handler(event_name):
     return EVENT_HANDLERS.get(event_name)
 
 def _event_pest_attack(data, event, crops):
-    lands = data.get("lands", [])
-    targets = [l for l in lands if l.get("crop")]
+    lands = data.get("lands", []) + data.get("lands_page2", [])
+    targets = [l for l in lands if l.get("crop") and not l.get("golden_pumpkin")]
     if targets:
         t = random.choice(targets)
-        # 虫灾减产50%（向下取整，至少保留1）
-        c = crops.get(t["crop"], {})
-        base = c.get("growth_minutes", 10)
-        mult = calc_yield_multiplier(t.get("upgrade_level", 1), data.get("talent_tree", {}), t["crop"], get_season(data)[0])
-        normal_yield = max(1, int(floor(base * mult / 10)))
-        reduced = max(1, normal_yield // 2)
-        t["_pest_reduced_yield"] = reduced
-        print(f"  💥 {t['crop']} 遭虫灾！本次产量减半：{normal_yield} → {reduced}")
+        # 虫灾改为延长生长时间2小时
+        t["_wind_delay"] = t.get("_wind_delay", 0) + 120
+        print(f"  🐛 {t['crop']} 遭虫灾！生长时间延长2小时")
 
 def _event_wind_damage(data, event, crops):
-    lands = data.get("lands", [])
-    targets = [l for l in lands if l.get("crop")]
+    lands = data.get("lands", []) + data.get("lands_page2", [])
+    targets = [l for l in lands if l.get("crop") and not l.get("golden_pumpkin")]
     if targets:
         t = random.choice(targets)
         # 暴风延长生长时间2小时
@@ -148,8 +143,8 @@ def _event_wind_damage(data, event, crops):
 
 
 def _event_alien_attack(data, event, crops):
-    lands = data.get("lands", [])
-    targets = [l for l in lands if l.get("crop")]
+    lands = data.get("lands", []) + data.get("lands_page2", [])
+    targets = [l for l in lands if l.get("crop") and not l.get("golden_pumpkin")]
     if targets:
         damaged = random.sample(targets, min(random.randint(1, 3), len(targets)))
         for t in damaged:
@@ -702,6 +697,28 @@ def load_save_v2():
         land.setdefault("_yield_remainder", 0.0)
         land.setdefault("_pest_reduced_yield", None)
         land.setdefault("_wind_delay", 0)
+
+    # 地块2（多页土地支持）
+    data.setdefault("active_land_page", 0)
+    data.setdefault("unlocked_lands_page2", INITIAL_LANDS)
+    if "lands_page2" not in data:
+        data["lands_page2"] = [
+            {"id": i + 1, "crop": None, "plant_time": None,
+             "upgrade_level": 1, "golden_pumpkin": False,
+             "_maturity_roll_done": False, "_yield_remainder": 0.0,
+             "_pest_reduced_yield": None, "_wind_delay": 0}
+            for i in range(MAX_LANDS)
+        ]
+    else:
+        while len(data["lands_page2"]) < MAX_LANDS:
+            data["lands_page2"].append({"id": len(data["lands_page2"]) + 1, "crop": None, "plant_time": None})
+        for land in data["lands_page2"]:
+            land.setdefault("upgrade_level", 1)
+            land.setdefault("golden_pumpkin", False)
+            land.setdefault("_maturity_roll_done", False)
+            land.setdefault("_yield_remainder", 0.0)
+            land.setdefault("_pest_reduced_yield", None)
+            land.setdefault("_wind_delay", 0)
     # 工厂数据
     if "factories" not in data:
         data["factories"] = {}
@@ -1585,6 +1602,36 @@ def calc_offline_crops_v2(data):
             pt + datetime.timedelta(minutes=actual_growth * n)
         ).strftime("%Y-%m-%d %H:%M:%S")
 
+    # 地块2 离线计算
+    page2_lands = data.get("lands_page2", [])
+    page2_unlocked = data.get("unlocked_lands_page2", INITIAL_LANDS)
+    for land in page2_lands[:page2_unlocked]:
+        if not land.get("crop") or not land.get("plant_time"):
+            continue
+        c = crops.get(land["crop"])
+        if not c:
+            continue
+        try:
+            pt = parse_dt(land["plant_time"])
+        except (ValueError, TypeError):
+            continue
+        actual_growth = calc_growth_time(land["crop"], land.get("upgrade_level", 1), talent_tree, land)
+        if (now - pt).total_seconds() / 60.0 < actual_growth:
+            continue
+        n = min(int(elapsed / actual_growth), 100)
+        if n <= 0:
+            continue
+        mult = calc_yield_multiplier(land.get("upgrade_level", 1), talent_tree, land["crop"], season)
+        total_qty = 0
+        for _ in range(n):
+            total_qty += calc_harvest_yield(land, 1.0, mult)
+        gold += int(c["sell_price"] * total_qty)
+        exp += c["exp"] * n
+        count += n
+        land["plant_time"] = (
+            pt + datetime.timedelta(minutes=actual_growth * n)
+        ).strftime("%Y-%m-%d %H:%M:%S")
+
     if count > 0:
         data["gold"] = data.get("gold", 0) + gold
         data["exp"] = data.get("exp", 0) + exp
@@ -1723,9 +1770,30 @@ def check_golden_pumpkin(data):
         growth = calc_growth_time("南瓜", land.get("upgrade_level", 1), data.get("talent_tree", {}))
         if (now - pt).total_seconds() / 60.0 < growth:
             continue
-        # 首次成熟，一生一次的1%判定
+        # 首次成熟，一生一次的2%判定
         land["_maturity_roll_done"] = True
-        if random.random() < 0.01:
+        if random.random() < 0.02:
+            land["golden_pumpkin"] = True
+            land["plant_time"] = now_str()
+            print("  🌟 彩蛋！一块南瓜田变成了金色南瓜！再等一个生长周期即可收获！")
+
+    # 地块2 金色南瓜检测
+    for land in data.get("lands_page2", [])[:data.get("unlocked_lands_page2", INITIAL_LANDS)]:
+        if land.get("crop") != "南瓜":
+            continue
+        if land.get("_maturity_roll_done"):
+            continue
+        if land.get("golden_pumpkin"):
+            land["_maturity_roll_done"] = True
+            continue
+        if not land.get("plant_time"):
+            continue
+        pt = parse_dt(land["plant_time"])
+        growth = calc_growth_time("南瓜", land.get("upgrade_level", 1), data.get("talent_tree", {}))
+        if (now - pt).total_seconds() / 60.0 < growth:
+            continue
+        land["_maturity_roll_done"] = True
+        if random.random() < 0.02:
             land["golden_pumpkin"] = True
             land["plant_time"] = now_str()
             print("  🌟 彩蛋！一块南瓜田变成了金色南瓜！再等一个生长周期即可收获！")

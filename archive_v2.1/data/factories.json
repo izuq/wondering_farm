@@ -1,8 +1,0 @@
-[
-  {"factory": "磨坊", "level": 2, "product": "面粉", "ingredients": {"小麦": 3}, "sell_price": 30, "time": 3},
-  {"factory": "榨油机", "level": 3, "product": "玉米油", "ingredients": {"玉米": 3}, "sell_price": 50, "time": 5},
-  {"factory": "酿酒坊", "level": 4, "product": "米酒", "ingredients": {"水稻": 3}, "sell_price": 80, "time": 8},
-  {"factory": "花茶坊", "level": 5, "product": "花茶", "ingredients": {"玫瑰": 2}, "sell_price": 120, "time": 10},
-  {"factory": "榨汁机", "level": 6, "product": "胡萝卜汁", "ingredients": {"胡萝卜": 3}, "sell_price": 160, "time": 12},
-  {"factory": "烘焙坊", "level": 8, "product": "南瓜饼", "ingredients": {"南瓜": 2}, "sell_price": 300, "time": 20}
-]
