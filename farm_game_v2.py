@@ -1170,12 +1170,12 @@ def new_agro_building_slots():
     } for i in range(MAX_AGRO_BUILDINGS)]
 
 def agro_build_cost(building_type="feed_mill"):
-    """建造费用（饲料加工厂5000，酿酒厂8000）"""
-    return 8000 if building_type == "brewery" else 5000
+    """建造费用（饲料加工厂50000，酿酒厂100000）"""
+    return 100000 if building_type == "brewery" else 50000
 
 def agro_upgrade_cost(level):
-    """建筑升级费用（1→2, 2→3, 3→4）"""
-    costs = {1: 5000, 2: 15000, 3: 40000}
+    """建筑升级费用（1→2: 50000, 2→3: 150000, 3→4: 400000）"""
+    costs = {1: 50000, 2: 150000, 3: 400000}
     return costs.get(level, None)
 
 def agro_unlock_cost(slot_id):
