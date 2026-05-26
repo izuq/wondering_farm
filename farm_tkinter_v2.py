@@ -2596,7 +2596,8 @@ class FarmGUIv2:
                     price = int(c["seed_price"] * (1.0 - discount))
                     can = d["gold"] >= price
                     disc_tag = "🔥" if merchant_disc > 0 else ""
-                    text = f"{disc_tag}{i}. {n}  {price}💰  {'✅' if can else '❌'}"
+                    inv_count = d.get("seed_bag", {}).get(n, 0)
+                    text = f"{disc_tag}{i}. {n}  {price}💰  库存:{inv_count}"
 
                     def buy_seed(name=n, p=price):
                         qty = self._quantity_dialog(f"购买 {name}", parent=dialog, unit_price=p, gold=d["gold"])
@@ -2654,7 +2655,8 @@ class FarmGUIv2:
                                     anchor="w", padx=5, state="disabled",
                                     bg="#eee", relief="groove", bd=1)
                 else:
-                    text = f"{i}. {a['name']}  {price}💰  {'✅' if can else '❌'}"
+                    owned = sum(1 for b in d["barns"] if b.get("animal") == a["name"])
+                    text = f"{i}. {a['name']}  {price}💰  拥有:{owned}"
 
                     def buy_animal(name=a["name"]):
                         ub = d.get("unlocked_barns", INITIAL_BARNS)
@@ -2736,7 +2738,7 @@ class FarmGUIv2:
             for feed_name, price in FEED_SHOP_PRICES.items():
                 can = d["gold"] >= price
                 inv_count = d.get("inventory", {}).get("feeds", {}).get(feed_name, 0)
-                text = f"{feed_name}  {price}💰/份  库存: {inv_count}  {'✅' if can else '❌'}"
+                text = f"{feed_name}  {price}💰/份  库存: {inv_count}"
 
                 def buy_feed(name=feed_name, p=price):
                     qty = self._quantity_dialog(f"购买 {name}", parent=dialog, unit_price=p, gold=d["gold"])
@@ -3505,9 +3507,11 @@ class FarmGUIv2:
                 sp = self._calc_barn_animal_sell_price(barn)
                 pd_ = barn.get("pending_product", 0)
                 cost = barn_upgrade_cost(lv) if lv < 10 else None
+                feed_str = ", ".join(f"{k}×{v}" for k, v in a.get("feed", {}).items()) if a else "?"
                 lines = [
                     f"栏位 #{bid}  Lv.{lv}",
                     f"动物: {barn['animal_type']} ({sn})",
+                    f"饲料: {feed_str}",
                     f"产品: {pn}({pp}💰)  待收:{pd_}",
                     f"出售价: {sp}💰",
                 ]
