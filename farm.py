@@ -95,6 +95,7 @@ def _default_crops():
         "玫瑰": {"level": 4, "growth_minutes": 45, "seed_price": 160, "sell_price": 320, "exp": 25},
         "胡萝卜": {"level": 5, "growth_minutes": 60, "seed_price": 220, "sell_price": 450, "exp": 30},
         "南瓜": {"level": 7, "growth_minutes": 120, "seed_price": 600, "sell_price": 1200, "exp": 60},
+        "西瓜": {"level": 12, "growth_minutes": 240, "seed_price": 1200, "sell_price": 2400, "exp": 120},
     }
 
 

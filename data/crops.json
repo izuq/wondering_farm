@@ -9,6 +9,7 @@
   "番茄":    {"level": 8,  "growth_minutes": 120,  "seed_price": 700,  "sell_price": 1400,  "exp": 55},
   "草莓":    {"level": 9,  "growth_minutes": 150,  "seed_price": 1000, "sell_price": 2000,  "exp": 75},
   "蓝莓":    {"level": 11, "growth_minutes": 180,  "seed_price": 1400, "sell_price": 2800,  "exp": 100},
+  "西瓜":    {"level": 12, "growth_minutes": 240,  "seed_price": 1200, "sell_price": 2400,  "exp": 120},
   "咖啡豆":  {"level": 14, "growth_minutes": 240,  "seed_price": 2000, "sell_price": 4000,  "exp": 140},
   "棉花":    {"level": 17, "growth_minutes": 360,  "seed_price": 3000, "sell_price": 6000,  "exp": 200},
   "甘蔗":    {"level": 20, "growth_minutes": 480,  "seed_price": 4500, "sell_price": 9000,  "exp": 280},

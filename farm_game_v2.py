@@ -200,7 +200,7 @@ def get_season(data):
 # 季节性作物加成（丰收季节产量 x1.5）
 _SEASON_BONUS_MAP = {
     "春": ["小麦", "水稻", "土豆", "四叶草"],
-    "夏": ["玉米", "玫瑰", "番茄", "蓝莓", "棉花", "甘蔗"],
+    "夏": ["玉米", "玫瑰", "番茄", "蓝莓", "西瓜", "棉花", "甘蔗"],
     "秋": ["南瓜", "胡萝卜", "葡萄", "可可豆", "咖啡豆"],
     "冬": ["草莓", "茶叶", "黄金小麦", "彩虹花"],
 }
@@ -1601,6 +1601,7 @@ def calc_offline_crops_v2(data):
         land["plant_time"] = (
             pt + datetime.timedelta(minutes=actual_growth * n)
         ).strftime("%Y-%m-%d %H:%M:%S")
+        land["_maturity_roll_done"] = False  # 重置金南瓜判定标志，允许在线重新判定
 
     # 地块2 离线计算
     page2_lands = data.get("lands_page2", [])
@@ -1631,6 +1632,7 @@ def calc_offline_crops_v2(data):
         land["plant_time"] = (
             pt + datetime.timedelta(minutes=actual_growth * n)
         ).strftime("%Y-%m-%d %H:%M:%S")
+        land["_maturity_roll_done"] = False  # 重置金南瓜判定标志
 
     if count > 0:
         data["gold"] = data.get("gold", 0) + gold

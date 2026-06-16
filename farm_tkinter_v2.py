@@ -274,6 +274,23 @@ def _draw_rainbow_flower(c, cx, cy, s=1.0):
     for i, (dx, dy) in enumerate([(0, -2), (-4, -4), (4, -4), (-2, -6), (2, -6), (0, -8)]):
         c.create_oval(cx+dx*s-4*s, cy+dy*s-3*s, cx+dx*s+4*s, cy+dy*s+3*s, fill=rainbow[i], outline="", width=0)
 
+def _draw_watermelon(c, cx, cy, s=1.0):
+    """西瓜 — 弧形条纹风格"""
+    # 主体
+    c.create_oval(cx-14*s, cy-11*s, cx+14*s, cy+11*s, fill="#1b6e1b", outline="#0f4f0f", width=1)
+    # 用弧线做条纹
+    c.create_arc(cx-14*s, cy-11*s, cx+14*s, cy+11*s, start=200, extent=40,
+                 fill="#4db84d", outline="", width=0)
+    c.create_arc(cx-14*s, cy-11*s, cx+14*s, cy+11*s, start=280, extent=30,
+                 fill="#4db84d", outline="", width=0)
+    c.create_arc(cx-14*s, cy-11*s, cx+14*s, cy+11*s, start=350, extent=30,
+                 fill="#4db84d", outline="", width=0)
+    # 高光
+    c.create_oval(cx-6*s, cy-8*s, cx-2*s, cy-4*s, fill="#80d080", outline="", width=0)
+    # 蒂柄
+    c.create_line(cx, cy-11*s, cx+4*s, cy-17*s,
+                  fill="#5a3a1c", width=max(2, int(2*s)), smooth=True, capstyle="round")
+
 CROP_DRAW_FUNCS = {
     "小麦": _draw_wheat, "玉米": _draw_corn, "水稻": _draw_rice,
     "玫瑰": _draw_rose, "胡萝卜": _draw_carrot, "南瓜": _draw_pumpkin,
@@ -283,6 +300,7 @@ CROP_DRAW_FUNCS = {
     "甘蔗": _draw_sugarcane, "葡萄": _draw_grape, "可可豆": _draw_cocoa,
     "茶叶": _draw_tea, "四叶草": _draw_clover,
     "黄金小麦": _draw_golden_wheat, "彩虹花": _draw_rainbow_flower,
+    "西瓜": _draw_watermelon,
 }
 
 # ============ 生长阶段支持 ============
@@ -2062,34 +2080,36 @@ class FarmGUIv2:
     # ==================== 土地操作 ====================
 
     def _check_golden_pumpkin_transformation(self):
-        """南瓜首次成熟时1%概率变金色南瓜，一生仅一次"""
+        """南瓜首次成熟时2%概率变金色南瓜，每轮种植一次判定"""
         d = self.data
         now = now_dt()
         triggered = False
-        active_lands = self._get_active_lands()
-        active_unlocked = self._get_active_unlocked()
-        for land in active_lands[:active_unlocked]:
-            if land.get("crop") != "南瓜":
-                continue
-            # 已判定过（变金或不变），不再处理
-            if land.get("_maturity_roll_done"):
-                continue
-            if land.get("golden_pumpkin"):
+        # 检查所有页面的南瓜，避免页面切换导致判定遗漏
+        all_lands = [
+            (d["lands"], d.get("unlocked_lands", 6)),
+            (d.get("lands_page2", []), d.get("unlocked_lands_page2", 6)),
+        ]
+        for lands, unlocked in all_lands:
+            for land in lands[:unlocked]:
+                if land.get("crop") != "南瓜":
+                    continue
+                if land.get("_maturity_roll_done"):
+                    continue
+                if land.get("golden_pumpkin"):
+                    land["_maturity_roll_done"] = True
+                    continue
+                if not land.get("plant_time"):
+                    continue
+                pt = parse_dt(land["plant_time"])
+                growth = calc_growth_time("南瓜", land["upgrade_level"], d["talent_tree"])
+                if (now - pt).total_seconds() / 60.0 < growth:
+                    continue
                 land["_maturity_roll_done"] = True
-                continue
-            if not land.get("plant_time"):
-                continue
-            pt = parse_dt(land["plant_time"])
-            growth = calc_growth_time("南瓜", land["upgrade_level"], d["talent_tree"])
-            if (now - pt).total_seconds() / 60.0 < growth:
-                continue  # 还没成熟
-            # 首次成熟，一生一次的2%判定
-            land["_maturity_roll_done"] = True
-            if random.random() < 0.02:
-                land["golden_pumpkin"] = True
-                land["plant_time"] = now_str()  # 重置生长计时器，再长一个周期
-                self._log("🌟 彩蛋！一块南瓜田变成了金色南瓜！再等一个生长周期即可收获！")
-                triggered = True
+                if random.random() < 0.02:
+                    land["golden_pumpkin"] = True
+                    land["plant_time"] = now_str()
+                    self._log("🌟 彩蛋！一块南瓜田变成了金色南瓜！再等一个生长周期即可收获！")
+                    triggered = True
         return triggered
 
     def _on_land_click(self, event):
