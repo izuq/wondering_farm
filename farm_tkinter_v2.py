@@ -2105,7 +2105,7 @@ class FarmGUIv2:
                 if (now - pt).total_seconds() / 60.0 < growth:
                     continue
                 land["_maturity_roll_done"] = True
-                if random.random() < 0.02:
+                if random.random() < 0.03:
                     land["golden_pumpkin"] = True
                     land["plant_time"] = now_str()
                     self._log("🌟 彩蛋！一块南瓜田变成了金色南瓜！再等一个生长周期即可收获！")

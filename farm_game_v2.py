@@ -693,7 +693,7 @@ def load_save_v2():
     for land in data["lands"]:
         land.setdefault("upgrade_level", 1)
         land.setdefault("golden_pumpkin", False)
-        land.setdefault("_maturity_roll_done", False)
+        land["_maturity_roll_done"] = False  # 每次加载重置，让已有南瓜获得重新判定机会
         land.setdefault("_yield_remainder", 0.0)
         land.setdefault("_pest_reduced_yield", None)
         land.setdefault("_wind_delay", 0)
@@ -715,7 +715,7 @@ def load_save_v2():
         for land in data["lands_page2"]:
             land.setdefault("upgrade_level", 1)
             land.setdefault("golden_pumpkin", False)
-            land.setdefault("_maturity_roll_done", False)
+            land["_maturity_roll_done"] = False  # 每次加载重置
             land.setdefault("_yield_remainder", 0.0)
             land.setdefault("_pest_reduced_yield", None)
             land.setdefault("_wind_delay", 0)
@@ -1774,7 +1774,7 @@ def check_golden_pumpkin(data):
             continue
         # 首次成熟，一生一次的2%判定
         land["_maturity_roll_done"] = True
-        if random.random() < 0.02:
+        if random.random() < 0.03:
             land["golden_pumpkin"] = True
             land["plant_time"] = now_str()
             print("  🌟 彩蛋！一块南瓜田变成了金色南瓜！再等一个生长周期即可收获！")
@@ -1795,7 +1795,7 @@ def check_golden_pumpkin(data):
         if (now - pt).total_seconds() / 60.0 < growth:
             continue
         land["_maturity_roll_done"] = True
-        if random.random() < 0.02:
+        if random.random() < 0.03:
             land["golden_pumpkin"] = True
             land["plant_time"] = now_str()
             print("  🌟 彩蛋！一块南瓜田变成了金色南瓜！再等一个生长周期即可收获！")
